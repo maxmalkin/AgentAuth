@@ -13,9 +13,81 @@ pub mod backend;
 pub mod signing;
 pub mod verification;
 
-pub use backend::{AgentKeyBackend, SigningBackend};
+pub use backend::{AgentKeyBackend, Ed25519PublicKey, Signature, SigningBackend};
 pub use signing::{sign_manifest, sign_token};
-pub use verification::{verify_manifest, verify_token};
+pub use verification::{verify_key_id, verify_manifest, verify_token};
+
+/// Returns the canonical bytes for manifest signing.
+///
+/// This is useful when you need to verify a manifest signature
+/// with raw signature bytes rather than a SignedManifest wrapper.
+pub fn manifest_signing_bytes(manifest: &crate::types::AgentManifest) -> Vec<u8> {
+    manifest
+        .to_canonical_bytes()
+        .unwrap_or_default()
+}
+
+/// Verifies an agent manifest with raw signature bytes.
+///
+/// This is a convenience function for verifying manifests when you have
+/// the signature as raw bytes rather than a SignedManifest wrapper.
+///
+/// # Arguments
+///
+/// * `manifest` - The manifest to verify
+/// * `signature` - Raw signature bytes (not base64 encoded)
+///
+/// # Errors
+///
+/// Returns an error if verification fails.
+pub fn verify_manifest_bytes(
+    manifest: &crate::types::AgentManifest,
+    signature: &[u8],
+) -> Result<(), crate::error::CryptoError> {
+    use crate::error::CryptoError;
+    use ed25519_dalek::{Signature as DalekSig, Verifier, VerifyingKey};
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+
+    // Get the canonical bytes
+    let bytes = manifest
+        .to_canonical_bytes()
+        .map_err(|e| CryptoError::VerificationFailed(format!("serialization failed: {e}")))?;
+
+    // Decode the public key from the manifest
+    let pk_bytes = URL_SAFE_NO_PAD
+        .decode(&manifest.public_key)
+        .map_err(|e| CryptoError::InvalidKeyFormat(format!("invalid public key encoding: {e}")))?;
+
+    if pk_bytes.len() != 32 {
+        return Err(CryptoError::InvalidKeyFormat(format!(
+            "public key must be 32 bytes, got {}",
+            pk_bytes.len()
+        )));
+    }
+
+    let mut pk_array = [0u8; 32];
+    pk_array.copy_from_slice(&pk_bytes);
+
+    // Parse the verifying key
+    let vk = VerifyingKey::from_bytes(&pk_array)
+        .map_err(|e| CryptoError::InvalidKeyFormat(e.to_string()))?;
+
+    // Parse the signature
+    if signature.len() != 64 {
+        return Err(CryptoError::VerificationFailed(format!(
+            "signature must be 64 bytes, got {}",
+            signature.len()
+        )));
+    }
+
+    let mut sig_array = [0u8; 64];
+    sig_array.copy_from_slice(signature);
+    let sig = DalekSig::from_bytes(&sig_array);
+
+    // Verify
+    vk.verify(&bytes, &sig)
+        .map_err(|_| CryptoError::VerificationFailed("signature verification failed".to_string()))
+}
 
 /// Generates a cryptographically secure random nonce (32 bytes).
 #[must_use]
