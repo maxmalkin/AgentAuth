@@ -14,7 +14,7 @@
 //! # Crypto Module
 //!
 //! The [`crypto`] module provides signing backends and verification functions.
-//! Production deployments must use [`crypto::KmsSigningBackend`].
+//! Production deployments must use a KMS-backed signing backend.
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]

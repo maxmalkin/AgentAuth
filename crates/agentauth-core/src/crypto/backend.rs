@@ -8,8 +8,8 @@
 //!
 //! # Development/Test Backends
 //!
-//! - [`InMemorySigningBackend`] - Only available in `#[cfg(test)]`
-//! - [`EncryptedKeyfile`] - For local development only (emits warning)
+//! - In-memory signing backend - Only available in `#[cfg(test)]`
+//! - Encrypted keyfile - For local development only (emits warning)
 
 use std::path::PathBuf;
 

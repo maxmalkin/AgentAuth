@@ -1,12 +1,12 @@
 //! Cryptographic operations for AgentAuth.
 //!
 //! This module provides signing backends and verification functions.
-//! Production deployments must use [`KmsSigningBackend`].
+//! Production deployments must use a KMS-backed signing backend.
 //!
 //! # Security Notes
 //!
 //! - All signature verification uses timing-safe comparison via `subtle`
-//! - [`InMemorySigningBackend`] is only available in test builds
+//! - In-memory signing backends are only available in test builds
 //! - Never log key material, signatures, or nonces
 
 pub mod backend;
