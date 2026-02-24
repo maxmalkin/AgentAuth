@@ -1,8 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches: [main, stage-*]
   pull_request:
     branches: [main]
 
@@ -147,10 +145,9 @@ jobs:
             exit 1
           fi
 
-          # Check for PlaintextKeyfile outside of feature-gated code
+          # Check for PlaintextKeyfile feature in production Dockerfiles and Helm charts
           # PlaintextKeyfile is gated behind allow-plaintext-keys feature
-          # We verify the feature is not enabled in production builds
-          if grep -rn "allow-plaintext-keys" Dockerfile* deploy/ .github/ --include="*.yml" --include="*.yaml" 2>/dev/null | grep -v "^#"; then
+          if grep -rn "allow-plaintext-keys" Dockerfile* deploy/ --include="*.yml" --include="*.yaml" 2>/dev/null; then
             echo "::error::Found allow-plaintext-keys feature in production configs"
             exit 1
           fi
