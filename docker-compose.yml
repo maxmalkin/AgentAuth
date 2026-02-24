@@ -1,0 +1,231 @@
+version: "3.9"
+
+# AgentAuth Development Stack
+# Includes: PostgreSQL (primary + replica), Redis Cluster, OpenTelemetry, Prometheus, Grafana
+
+services:
+  # PostgreSQL Primary
+  postgres-primary:
+    image: postgres:16-alpine
+    container_name: agentauth-postgres-primary
+    environment:
+      POSTGRES_USER: agentauth
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentauth_dev}
+      POSTGRES_DB: agentauth
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-primary-data:/var/lib/postgresql/data
+      - ./deploy/postgres/init-primary.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "max_wal_senders=3"
+      - "-c"
+      - "max_replication_slots=3"
+      - "-c"
+      - "hot_standby=on"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentauth -d agentauth"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agentauth-net
+
+  # PostgreSQL Replica
+  postgres-replica:
+    image: postgres:16-alpine
+    container_name: agentauth-postgres-replica
+    environment:
+      POSTGRES_USER: agentauth
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentauth_dev}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-replica-data:/var/lib/postgresql/data
+    depends_on:
+      postgres-primary:
+        condition: service_healthy
+    command:
+      - "postgres"
+      - "-c"
+      - "hot_standby=on"
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentauth"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agentauth-net
+
+  # Redis Cluster Node 1
+  redis-1:
+    image: redis:7-alpine
+    container_name: agentauth-redis-1
+    command: >
+      redis-server
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+      --port 6379
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-1-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - agentauth-net
+
+  # Redis Cluster Node 2
+  redis-2:
+    image: redis:7-alpine
+    container_name: agentauth-redis-2
+    command: >
+      redis-server
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+      --port 6379
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-2-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - agentauth-net
+
+  # Redis Cluster Node 3
+  redis-3:
+    image: redis:7-alpine
+    container_name: agentauth-redis-3
+    command: >
+      redis-server
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --appendonly yes
+      --port 6379
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis-3-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - agentauth-net
+
+  # Redis Cluster Initializer
+  redis-cluster-init:
+    image: redis:7-alpine
+    container_name: agentauth-redis-cluster-init
+    depends_on:
+      redis-1:
+        condition: service_healthy
+      redis-2:
+        condition: service_healthy
+      redis-3:
+        condition: service_healthy
+    command: >
+      sh -c "
+        sleep 2 &&
+        redis-cli --cluster create
+          redis-1:6379
+          redis-2:6379
+          redis-3:6379
+          --cluster-replicas 0
+          --cluster-yes
+      "
+    networks:
+      - agentauth-net
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.96.0
+    container_name: agentauth-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./deploy/otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "8888:8888"   # Prometheus metrics for collector itself
+      - "8889:8889"   # Prometheus exporter
+    depends_on:
+      - prometheus
+    networks:
+      - agentauth-net
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.50.1
+    container_name: agentauth-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - agentauth-net
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: agentauth-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - agentauth-net
+
+volumes:
+  postgres-primary-data:
+  postgres-replica-data:
+  redis-1-data:
+  redis-2-data:
+  redis-3-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  agentauth-net:
+    driver: bridge

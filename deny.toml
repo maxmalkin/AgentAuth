@@ -1,0 +1,101 @@
+# cargo-deny configuration for AgentAuth
+# https://embarkstudios.github.io/cargo-deny/
+
+[graph]
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+]
+
+# =============================================================================
+# Licenses
+# =============================================================================
+
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-DFS-2016",
+    "MPL-2.0",
+    "CC0-1.0",
+]
+confidence-threshold = 0.8
+
+[[licenses.clarify]]
+name = "ring"
+expression = "MIT AND ISC AND OpenSSL"
+license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
+
+[[licenses.clarify]]
+name = "webpki"
+expression = "ISC"
+license-files = [{ path = "LICENSE", hash = 0x1c7e6c }]
+
+# =============================================================================
+# Bans
+# =============================================================================
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+workspace-default-features = "allow"
+external-default-features = "allow"
+
+# Banned crates - security or supply chain concerns
+deny = [
+    # No native-tls - use rustls only
+    { name = "native-tls", wrappers = [] },
+    { name = "openssl", wrappers = [] },
+    { name = "openssl-sys", wrappers = [] },
+
+    # No unmaintained crates
+    { name = "time", version = "<0.3" },
+
+    # No crates with known vulnerabilities
+    { name = "chrono", version = "<0.4.20" },
+]
+
+# Allow specific duplicates that are known to be safe
+skip = [
+    # Common duplicates due to ecosystem transitions
+    { name = "syn", version = "1" },
+    { name = "hashbrown", version = "0.12" },
+]
+
+skip-tree = []
+
+# =============================================================================
+# Sources
+# =============================================================================
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
+
+[sources.allow-org]
+github = []
+
+# =============================================================================
+# Advisories
+# =============================================================================
+
+[advisories]
+version = 2
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+vulnerability = "deny"
+unmaintained = "warn"
+yanked = "deny"
+notice = "warn"
+ignore = []

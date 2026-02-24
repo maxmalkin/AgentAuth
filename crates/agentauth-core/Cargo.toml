@@ -1,0 +1,58 @@
+[package]
+name = "agentauth-core"
+description = "Core protocol types, crypto primitives, and token logic for AgentAuth"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[features]
+default = []
+# WARNING: This feature must NEVER be enabled in production builds.
+# It allows plaintext key storage which is a critical security vulnerability.
+allow-plaintext-keys = []
+
+[dependencies]
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+prost = { workspace = true }
+
+# Cryptography
+ring = { workspace = true }
+ed25519-dalek = { workspace = true }
+sha2 = { workspace = true }
+rand = { workspace = true }
+rand_core = { workspace = true }
+subtle = { workspace = true }
+base64 = { workspace = true }
+hex = { workspace = true }
+
+# UUID v7
+uuid = { workspace = true }
+
+# Time
+chrono = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Tracing (for warn! on dev-only features)
+tracing = { workspace = true }
+
+# URL (for capability resource parsing)
+url = { workspace = true }
+
+# JSON Schema generation
+schemars = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+tokio-test = { workspace = true }
+proptest = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

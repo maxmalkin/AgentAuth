@@ -1,0 +1,46 @@
+[package]
+name = "agentauth-audit-archiver-bin"
+description = "AgentAuth Audit Archiver - async audit log compaction and cold storage"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "audit-archiver"
+path = "src/main.rs"
+
+[dependencies]
+agentauth-core = { path = "../../crates/agentauth-core" }
+
+# Async runtime
+tokio = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Database
+sqlx = { workspace = true }
+
+# UUID
+uuid = { workspace = true }
+
+# Time
+chrono = { workspace = true }
+
+# Error handling
+anyhow = { workspace = true }
+
+# Tracing
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+# Configuration
+config = { workspace = true }
+dotenvy = { workspace = true }
+
+[lints]
+workspace = true
