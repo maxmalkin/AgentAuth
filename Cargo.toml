@@ -40,8 +40,8 @@ serde_json = { version = "1.0" }
 prost = "0.12"
 prost-types = "0.12"
 
-# Database
-sqlx = { version = "0.7", features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json"] }
+# Database (default-features = false to avoid pulling in mysql/sqlite which have vulnerable deps)
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json", "macros", "migrate"] }
 deadpool-postgres = "0.12"
 
 # Redis
@@ -77,7 +77,6 @@ opentelemetry_sdk = { version = "0.22", features = ["rt-tokio"] }
 opentelemetry-otlp = { version = "0.15", features = ["tonic"] }
 
 # Metrics
-prometheus = "0.13"
 metrics = "0.22"
 metrics-exporter-prometheus = "0.14"
 
