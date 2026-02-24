@@ -17,7 +17,7 @@ services:
       - postgres-primary-data:/var/lib/postgresql/data
       - ./deploy/postgres/init-primary.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "5432:5432"
+      - "5434:5432"
     command:
       - "postgres"
       - "-c"
@@ -54,7 +54,7 @@ services:
       - "-c"
       - "hot_standby=on"
     ports:
-      - "5433:5432"
+      - "5435:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agentauth"]
       interval: 5s
