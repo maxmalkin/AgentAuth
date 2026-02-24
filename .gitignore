@@ -62,3 +62,8 @@ docker-compose.override.yml
 # OS
 .DS_Store
 Thumbs.db
+
+# Claude instructions and work logs
+CLAUDE.md
+**/CLAUDE.md
+WORKLOG.md

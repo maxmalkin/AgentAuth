@@ -1,0 +1,12 @@
+# Audit configuration for cargo-audit
+# https://rustsec.org/
+
+[advisories]
+# Ignore advisories that don't apply to our use case
+ignore = [
+    # RUSTSEC-2023-0071: RSA timing side-channel vulnerability in sqlx-mysql
+    # We only use PostgreSQL, not MySQL. The RSA crate is pulled in transitively
+    # by sqlx-mysql which is included by sqlx-macros-core for compile-time checks.
+    # This vulnerability does not affect our deployment since we never use MySQL.
+    "RUSTSEC-2023-0071",
+]

@@ -107,7 +107,7 @@ pub fn verify_key_id(expected: &str, actual: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::crypto::backend::InMemorySigningBackend;
+    use crate::crypto::backend::{InMemorySigningBackend, SigningBackend};
     use crate::crypto::signing::{sign_manifest, sign_token};
     use crate::types::{
         AgentId, AgentManifest, AgentAccessToken, BehavioralEnvelope, Capability,

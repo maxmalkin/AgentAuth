@@ -81,7 +81,7 @@ pub async fn sign_token<B: SigningBackend>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::crypto::backend::InMemorySigningBackend;
+    use crate::crypto::backend::{InMemorySigningBackend, SigningBackend};
     use crate::types::{AgentId, Capability, BehavioralEnvelope, HumanPrincipalId, ServiceProviderId, TokenId};
     use chrono::Utc;
 
