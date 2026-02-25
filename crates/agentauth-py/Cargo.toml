@@ -17,8 +17,8 @@ agentauth-sdk = { path = "../agentauth-sdk" }
 agentauth-core = { path = "../agentauth-core" }
 
 # Python bindings
-pyo3 = { version = "0.22", features = ["extension-module"] }
-pyo3-async-runtimes = { version = "0.22", features = ["tokio-runtime"] }
+pyo3 = { version = "0.28", features = ["extension-module"] }
+pyo3-async-runtimes = { version = "0.28", features = ["tokio-runtime"] }
 
 # HTTP (for header types)
 reqwest = { workspace = true }
@@ -41,4 +41,4 @@ chrono = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-pyo3 = { version = "0.22", features = ["auto-initialize"] }
+pyo3 = { version = "0.28", features = ["auto-initialize"] }

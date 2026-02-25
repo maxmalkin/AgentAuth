@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 /// Python-accessible WriteConditions type.
-#[pyclass(name = "WriteConditions")]
+#[pyclass(name = "WriteConditions", frozen, from_py_object)]
 #[derive(Clone)]
 pub struct PyWriteConditions {
     inner: WriteConditions,
@@ -45,7 +45,7 @@ impl PyWriteConditions {
 }
 
 /// Python-accessible Capability type.
-#[pyclass(name = "Capability")]
+#[pyclass(name = "Capability", frozen, from_py_object)]
 #[derive(Clone)]
 pub struct PyCapability {
     inner: Capability,
@@ -127,6 +127,7 @@ impl PyCapability {
 }
 
 /// Converts a Python object to a serde_json::Value.
+#[allow(deprecated)] // downcast is deprecated but cast has different ergonomics
 fn python_to_json_value(_py: Python<'_>, obj: &Bound<'_, PyAny>) -> PyResult<serde_json::Value> {
     if obj.is_none() {
         return Ok(serde_json::Value::Null);
@@ -177,7 +178,7 @@ impl From<Capability> for PyCapability {
 }
 
 /// Python-accessible BehavioralEnvelope type.
-#[pyclass(name = "BehavioralEnvelope")]
+#[pyclass(name = "BehavioralEnvelope", frozen, from_py_object)]
 #[derive(Clone)]
 pub struct PyBehavioralEnvelope {
     inner: BehavioralEnvelope,
@@ -406,16 +407,12 @@ impl PyAgentAuthClient {
                 .await
                 .map_err(|e| PyRuntimeError::new_err(format!("Authentication failed: {e}")))?;
 
-            // Convert headers to a Python dict
-            Python::with_gil(|py| {
-                let dict = PyDict::new_bound(py);
-                for (key, value) in &headers {
-                    let key_str = key.as_str();
-                    let value_str = value.to_str().unwrap_or("");
-                    dict.set_item(key_str, value_str)?;
-                }
-                Ok(dict.into_any().unbind())
-            })
+            // Convert headers to a HashMap to return to Python
+            let mut result: HashMap<String, String> = HashMap::new();
+            for (key, value) in &headers {
+                result.insert(key.as_str().to_string(), value.to_str().unwrap_or("").to_string());
+            }
+            Ok(result)
         })
     }
 
