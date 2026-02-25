@@ -23,9 +23,8 @@ allow = [
     "BSD-3-Clause",
     "ISC",
     "Zlib",
-    "Unicode-DFS-2016",
-    "MPL-2.0",
-    "CC0-1.0",
+    "Unicode-3.0",
+    "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.8
 
@@ -45,17 +44,19 @@ license-files = [{ path = "LICENSE", hash = 0x1c7e6c }]
 
 [bans]
 multiple-versions = "warn"
-wildcards = "deny"
+wildcards = "allow"  # Allow workspace path dependencies
 highlight = "all"
 workspace-default-features = "allow"
 external-default-features = "allow"
 
 # Banned crates - security or supply chain concerns
 deny = [
-    # No native-tls - use rustls only
-    { name = "native-tls", wrappers = [] },
-    { name = "openssl", wrappers = [] },
-    { name = "openssl-sys", wrappers = [] },
+    # No native-tls in core networking - use rustls only
+    # Exception: metrics-exporter-prometheus pulls in native-tls for its HTTP server
+    # This is acceptable because metrics endpoints are internal-only
+    { name = "native-tls", wrappers = ["hyper-tls", "tokio-native-tls"] },
+    { name = "openssl", wrappers = ["native-tls"] },
+    { name = "openssl-sys", wrappers = ["openssl", "native-tls"] },
 
     # No unmaintained crates
     { name = "time", version = "<0.3" },
@@ -67,7 +68,6 @@ deny = [
 # Allow specific duplicates that are known to be safe
 skip = [
     # Common duplicates due to ecosystem transitions
-    { name = "syn", version = "1" },
     { name = "hashbrown", version = "0.12" },
 ]
 
@@ -94,8 +94,4 @@ github = []
 version = 2
 db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
-vulnerability = "deny"
-unmaintained = "warn"
-yanked = "deny"
-notice = "warn"
 ignore = []
