@@ -6,12 +6,17 @@
   "scripts": {
     "dev": "bun --hot src/server.ts",
     "start": "bun src/server.ts",
-    "test": "bun test"
+    "build": "bun build src/index.html --outdir dist",
+    "test": "bun test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/bun": "latest",
     "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "playwright": "^1.58.2"
   },
   "peerDependencies": {
     "typescript": "^5"
