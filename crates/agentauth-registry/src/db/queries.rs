@@ -46,11 +46,7 @@ pub struct AgentRow {
 }
 
 /// Insert a new agent manifest.
-pub async fn insert_agent(
-    pool: &PgPool,
-    manifest: &AgentManifest,
-    signature: &[u8],
-) -> Result<()> {
+pub async fn insert_agent(pool: &PgPool, manifest: &AgentManifest, signature: &[u8]) -> Result<()> {
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 
     // EXPLAIN ANALYZE: Uses primary key, single row insert
@@ -78,12 +74,15 @@ pub async fn insert_agent(
     .bind(&manifest.description)
     .bind(&public_key_bytes)
     .bind(&manifest.key_id)
-    .bind(serde_json::to_value(&manifest.capabilities_requested).map_err(|e| {
-        RegistryError::Internal(format!("failed to serialize capabilities: {e}"))
-    })?)
-    .bind(serde_json::to_value(&default_envelope).map_err(|e| {
-        RegistryError::Internal(format!("failed to serialize envelope: {e}"))
-    })?)
+    .bind(
+        serde_json::to_value(&manifest.capabilities_requested).map_err(|e| {
+            RegistryError::Internal(format!("failed to serialize capabilities: {e}"))
+        })?,
+    )
+    .bind(
+        serde_json::to_value(&default_envelope)
+            .map_err(|e| RegistryError::Internal(format!("failed to serialize envelope: {e}")))?,
+    )
     .bind(&manifest.model_origin)
     .bind(signature)
     .bind(manifest.issued_at)
@@ -117,10 +116,11 @@ pub async fn get_agent(pool: &PgPool, agent_id: &AgentId) -> Result<Option<Agent
 /// Check if an agent exists.
 pub async fn agent_exists(pool: &PgPool, agent_id: &AgentId) -> Result<bool> {
     // EXPLAIN ANALYZE: Uses primary key index
-    let exists: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM agent_manifests WHERE id = $1)")
-        .bind(agent_id.as_uuid())
-        .fetch_one(pool)
-        .await?;
+    let exists: bool =
+        sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM agent_manifests WHERE id = $1)")
+            .bind(agent_id.as_uuid())
+            .fetch_one(pool)
+            .await?;
     Ok(exists)
 }
 
@@ -192,12 +192,15 @@ pub async fn insert_grant(
     .bind(grant_id.as_uuid())
     .bind(agent_id.as_uuid())
     .bind(service_provider_id)
-    .bind(serde_json::to_value(capabilities).map_err(|e| {
-        RegistryError::Internal(format!("failed to serialize capabilities: {e}"))
-    })?)
-    .bind(serde_json::to_value(envelope).map_err(|e| {
-        RegistryError::Internal(format!("failed to serialize envelope: {e}"))
-    })?)
+    .bind(
+        serde_json::to_value(capabilities).map_err(|e| {
+            RegistryError::Internal(format!("failed to serialize capabilities: {e}"))
+        })?,
+    )
+    .bind(
+        serde_json::to_value(envelope)
+            .map_err(|e| RegistryError::Internal(format!("failed to serialize envelope: {e}")))?,
+    )
     .bind(expires_at)
     .execute(pool)
     .await?;
@@ -228,11 +231,12 @@ pub async fn get_grant(pool: &PgPool, grant_id: &GrantId) -> Result<Option<Grant
 /// Count pending grants for an agent.
 pub async fn count_pending_grants(pool: &PgPool, agent_id: &AgentId) -> Result<i64> {
     // EXPLAIN ANALYZE: Uses idx_capability_grants_pending index
-    let count: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM capability_grants WHERE agent_id = $1 AND status = 'pending'")
-            .bind(agent_id.as_uuid())
-            .fetch_one(pool)
-            .await?;
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM capability_grants WHERE agent_id = $1 AND status = 'pending'",
+    )
+    .bind(agent_id.as_uuid())
+    .fetch_one(pool)
+    .await?;
     Ok(count)
 }
 
@@ -355,12 +359,15 @@ pub async fn insert_token(
     .bind(token.human_principal_id.0)
     .bind(key_id)
     .bind(token_binding)
-    .bind(serde_json::to_value(&token.granted_capabilities).map_err(|e| {
-        RegistryError::Internal(format!("failed to serialize capabilities: {e}"))
-    })?)
-    .bind(serde_json::to_value(&token.behavioral_envelope).map_err(|e| {
-        RegistryError::Internal(format!("failed to serialize envelope: {e}"))
-    })?)
+    .bind(
+        serde_json::to_value(&token.granted_capabilities).map_err(|e| {
+            RegistryError::Internal(format!("failed to serialize capabilities: {e}"))
+        })?,
+    )
+    .bind(
+        serde_json::to_value(&token.behavioral_envelope)
+            .map_err(|e| RegistryError::Internal(format!("failed to serialize envelope: {e}")))?,
+    )
     .bind(token.issued_at)
     .bind(token.expires_at)
     .execute(pool)
@@ -414,11 +421,7 @@ pub async fn find_existing_token(
 }
 
 /// Revoke a token.
-pub async fn revoke_token(
-    pool: &PgPool,
-    jti: &TokenId,
-    reason: Option<&str>,
-) -> Result<bool> {
+pub async fn revoke_token(pool: &PgPool, jti: &TokenId, reason: Option<&str>) -> Result<bool> {
     let result = sqlx::query(
         r#"
         UPDATE issued_tokens

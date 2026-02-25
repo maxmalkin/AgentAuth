@@ -176,12 +176,12 @@ impl GrantService {
     /// Convert a database row to a grant.
     fn row_to_grant(row: &db::GrantRow) -> Result<CapabilityGrant> {
         let capabilities: Vec<Capability> =
-            serde_json::from_value(row.granted_capabilities.clone())
-                .map_err(|e| RegistryError::Internal(format!("failed to parse capabilities: {e}")))?;
+            serde_json::from_value(row.granted_capabilities.clone()).map_err(|e| {
+                RegistryError::Internal(format!("failed to parse capabilities: {e}"))
+            })?;
 
-        let envelope: BehavioralEnvelope =
-            serde_json::from_value(row.behavioral_envelope.clone())
-                .map_err(|e| RegistryError::Internal(format!("failed to parse envelope: {e}")))?;
+        let envelope: BehavioralEnvelope = serde_json::from_value(row.behavioral_envelope.clone())
+            .map_err(|e| RegistryError::Internal(format!("failed to parse envelope: {e}")))?;
 
         let status = match row.status.as_str() {
             "pending" => GrantStatus::Pending,

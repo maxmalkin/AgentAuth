@@ -125,9 +125,11 @@ impl IntoResponse for RegistryError {
             }
             Self::GrantAlreadyExists => (StatusCode::CONFLICT, "grant_already_exists", None),
             Self::GrantNotPending => (StatusCode::CONFLICT, "grant_not_pending", None),
-            Self::TooManyPendingGrants => {
-                (StatusCode::TOO_MANY_REQUESTS, "too_many_pending_grants", None)
-            }
+            Self::TooManyPendingGrants => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "too_many_pending_grants",
+                None,
+            ),
             Self::GrantExpired => (StatusCode::GONE, "grant_expired", None),
             Self::TokenAlreadyRevoked => (StatusCode::CONFLICT, "token_already_revoked", None),
             Self::AgentAlreadyRegistered => {
@@ -135,24 +137,24 @@ impl IntoResponse for RegistryError {
             }
             Self::OtpAlreadyUsed => (StatusCode::CONFLICT, "otp_already_used", None),
             Self::OtpInvalid => (StatusCode::UNAUTHORIZED, "otp_invalid", None),
-            Self::SignatureVerificationFailed(_) => {
-                (StatusCode::UNAUTHORIZED, "signature_verification_failed", None)
-            }
-            Self::Database(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "database_error", None)
-            }
+            Self::SignatureVerificationFailed(_) => (
+                StatusCode::UNAUTHORIZED,
+                "signature_verification_failed",
+                None,
+            ),
+            Self::Database(_) => (StatusCode::INTERNAL_SERVER_ERROR, "database_error", None),
             Self::Cache(_) => (StatusCode::INTERNAL_SERVER_ERROR, "cache_error", None),
             Self::Crypto(_) => (StatusCode::INTERNAL_SERVER_ERROR, "crypto_error", None),
             Self::RateLimited => (StatusCode::TOO_MANY_REQUESTS, "rate_limited", Some(60)),
-            Self::CooldownActive(secs) => {
-                (StatusCode::TOO_MANY_REQUESTS, "cooldown_active", Some(*secs))
-            }
+            Self::CooldownActive(secs) => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "cooldown_active",
+                Some(*secs),
+            ),
             Self::ServiceUnavailable(_) => {
                 (StatusCode::SERVICE_UNAVAILABLE, "service_unavailable", None)
             }
-            Self::Internal(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, "internal_error", None)
-            }
+            Self::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, "internal_error", None),
         };
 
         let body = ErrorResponse {

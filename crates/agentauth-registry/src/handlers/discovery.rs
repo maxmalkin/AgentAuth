@@ -1,11 +1,7 @@
 //! Discovery document handlers.
 
 use crate::state::AppState;
-use axum::{
-    extract::State,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State, response::IntoResponse, Json};
 use serde::Serialize;
 
 /// AgentAuth discovery document.
@@ -78,9 +74,7 @@ pub struct KeysResponse {
 /// Get the AgentAuth discovery document.
 ///
 /// GET /.well-known/agentauth
-pub async fn get_discovery_document(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+pub async fn get_discovery_document(State(state): State<AppState>) -> impl IntoResponse {
     let config = &state.config;
 
     // Get the current public key
@@ -108,10 +102,7 @@ pub async fn get_discovery_document(
             "files".to_string(),
             "messages".to_string(),
         ],
-        trusted_model_origins: vec![
-            "anthropic.com".to_string(),
-            "openai.com".to_string(),
-        ],
+        trusted_model_origins: vec!["anthropic.com".to_string(), "openai.com".to_string()],
         token_endpoint: format!("{verifier_url}/v1/tokens/verify"),
         approval_ui_endpoint: config.server.approval_ui_url.clone(),
         bootstrap_endpoint: format!("{base_url}/v1/agents/bootstrap"),
@@ -131,9 +122,7 @@ pub async fn get_discovery_document(
 /// Get all public keys (current and retired verify-only).
 ///
 /// GET /.well-known/agentauth/keys
-pub async fn get_keys(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+pub async fn get_keys(State(state): State<AppState>) -> impl IntoResponse {
     let mut keys = Vec::new();
 
     // Get current signing key

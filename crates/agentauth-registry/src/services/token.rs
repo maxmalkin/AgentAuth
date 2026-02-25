@@ -59,7 +59,9 @@ impl TokenService {
         let window_start =
             Utc::now() - ChronoDuration::seconds(self.config.idempotency_window_secs as i64);
 
-        if let Some(existing) = db::find_existing_token(self.db.primary(), grant_id, window_start).await? {
+        if let Some(existing) =
+            db::find_existing_token(self.db.primary(), grant_id, window_start).await?
+        {
             // Return existing token (idempotent response)
             return Self::row_to_token(&existing, grant_id);
         }
@@ -116,7 +118,11 @@ impl TokenService {
             match token {
                 None => return Err(RegistryError::TokenNotFound(jti.to_string())),
                 Some(t) if t.is_revoked => return Err(RegistryError::TokenAlreadyRevoked),
-                _ => return Err(RegistryError::Internal("unexpected revocation failure".into())),
+                _ => {
+                    return Err(RegistryError::Internal(
+                        "unexpected revocation failure".into(),
+                    ))
+                }
             }
         }
 
@@ -151,12 +157,12 @@ impl TokenService {
     /// Note: grant_id is not part of AgentAccessToken, it's stored separately in the DB
     fn row_to_token(row: &db::TokenRow, _grant_id: &GrantId) -> Result<AgentAccessToken> {
         let capabilities: Vec<Capability> =
-            serde_json::from_value(row.granted_capabilities.clone())
-                .map_err(|e| RegistryError::Internal(format!("failed to parse capabilities: {e}")))?;
+            serde_json::from_value(row.granted_capabilities.clone()).map_err(|e| {
+                RegistryError::Internal(format!("failed to parse capabilities: {e}"))
+            })?;
 
-        let envelope: BehavioralEnvelope =
-            serde_json::from_value(row.behavioral_envelope.clone())
-                .map_err(|e| RegistryError::Internal(format!("failed to parse envelope: {e}")))?;
+        let envelope: BehavioralEnvelope = serde_json::from_value(row.behavioral_envelope.clone())
+            .map_err(|e| RegistryError::Internal(format!("failed to parse envelope: {e}")))?;
 
         Ok(AgentAccessToken {
             jti: TokenId::from_uuid(row.jti),

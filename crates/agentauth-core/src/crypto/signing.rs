@@ -1,7 +1,7 @@
 //! Signing operations for manifests and tokens.
 
 use crate::error::CryptoError;
-use crate::types::{AgentManifest, AgentAccessToken, SignedManifest, SignedAAT};
+use crate::types::{AgentAccessToken, AgentManifest, SignedAAT, SignedManifest};
 
 use super::backend::SigningBackend;
 
@@ -82,7 +82,9 @@ pub async fn sign_token<B: SigningBackend>(
 mod tests {
     use super::*;
     use crate::crypto::backend::{InMemorySigningBackend, SigningBackend};
-    use crate::types::{AgentId, Capability, BehavioralEnvelope, HumanPrincipalId, ServiceProviderId, TokenId};
+    use crate::types::{
+        AgentId, BehavioralEnvelope, Capability, HumanPrincipalId, ServiceProviderId, TokenId,
+    };
     use chrono::Utc;
 
     fn create_test_manifest() -> AgentManifest {

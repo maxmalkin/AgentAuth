@@ -3,7 +3,7 @@
 //! All verification uses timing-safe comparison to prevent timing attacks.
 
 use crate::error::CryptoError;
-use crate::types::{SignedManifest, SignedAAT};
+use crate::types::{SignedAAT, SignedManifest};
 
 use super::backend::{Ed25519PublicKey, Signature};
 
@@ -57,10 +57,7 @@ pub fn verify_manifest(
 /// # Security
 ///
 /// This function uses timing-safe comparison for the signature verification.
-pub fn verify_token(
-    signed: &SignedAAT,
-    public_key: &Ed25519PublicKey,
-) -> Result<(), CryptoError> {
+pub fn verify_token(signed: &SignedAAT, public_key: &Ed25519PublicKey) -> Result<(), CryptoError> {
     // Decode the signature
     let signature = Signature::from_base64url(&signed.signature)?;
 
@@ -110,8 +107,8 @@ mod tests {
     use crate::crypto::backend::{InMemorySigningBackend, SigningBackend};
     use crate::crypto::signing::{sign_manifest, sign_token};
     use crate::types::{
-        AgentId, AgentManifest, AgentAccessToken, BehavioralEnvelope, Capability,
-        HumanPrincipalId, ServiceProviderId, TokenId,
+        AgentAccessToken, AgentId, AgentManifest, BehavioralEnvelope, Capability, HumanPrincipalId,
+        ServiceProviderId, TokenId,
     };
     use chrono::Utc;
 

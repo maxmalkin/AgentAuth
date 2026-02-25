@@ -4,12 +4,7 @@ use crate::error::{RegistryError, Result};
 use crate::services::{AuditEvent, AuditEventType};
 use crate::state::AppState;
 use agentauth_core::{AgentAccessToken, AgentId, BehavioralEnvelope, Capability, GrantId, TokenId};
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -111,7 +106,10 @@ pub async fn issue_token(
         )
         .await;
 
-    Ok((StatusCode::CREATED, Json(token_to_response(&token, req.grant_id))))
+    Ok((
+        StatusCode::CREATED,
+        Json(token_to_response(&token, req.grant_id)),
+    ))
 }
 
 /// Revoke a token.
@@ -131,7 +129,10 @@ pub async fn revoke_token(
         .ok_or_else(|| RegistryError::TokenNotFound(jti.to_string()))?;
 
     // Revoke the token
-    state.tokens.revoke_token(&jti, req.reason.as_deref()).await?;
+    state
+        .tokens
+        .revoke_token(&jti, req.reason.as_deref())
+        .await?;
 
     // Record audit event
     let _ = state
@@ -176,9 +177,7 @@ mod option_hex_serde {
     {
         let opt: Option<String> = Option::deserialize(deserializer)?;
         match opt {
-            Some(s) if !s.is_empty() => hex::decode(&s)
-                .map(Some)
-                .map_err(serde::de::Error::custom),
+            Some(s) if !s.is_empty() => hex::decode(&s).map(Some).map_err(serde::de::Error::custom),
             _ => Ok(None),
         }
     }
