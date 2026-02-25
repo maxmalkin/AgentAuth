@@ -8,8 +8,8 @@
 //!
 //! # Development/Test Backends
 //!
-//! - [`InMemorySigningBackend`] - Only available in `#[cfg(test)]`
-//! - [`EncryptedKeyfile`] - For local development only (emits warning)
+//! - In-memory signing backend - Only available in `#[cfg(test)]`
+//! - Encrypted keyfile - For local development only (emits warning)
 
 use std::path::PathBuf;
 
@@ -117,25 +117,21 @@ impl Signature {
 ///
 /// Implementations must be thread-safe (`Send + Sync`) and should use
 /// async operations for any I/O (e.g., KMS calls).
+#[async_trait::async_trait]
 pub trait SigningBackend: Send + Sync {
     /// Signs the given message and returns the signature.
     ///
     /// # Errors
     ///
     /// Returns an error if signing fails (e.g., KMS unavailable).
-    fn sign(
-        &self,
-        message: &[u8],
-    ) -> impl std::future::Future<Output = Result<Signature, CryptoError>> + Send;
+    async fn sign(&self, message: &[u8]) -> Result<Signature, CryptoError>;
 
     /// Returns the public key for verification.
     ///
     /// # Errors
     ///
     /// Returns an error if the public key cannot be retrieved.
-    fn public_key(
-        &self,
-    ) -> impl std::future::Future<Output = Result<Ed25519PublicKey, CryptoError>> + Send;
+    async fn public_key(&self) -> Result<Ed25519PublicKey, CryptoError>;
 
     /// Returns the key ID for key rotation support.
     fn key_id(&self) -> &str;
@@ -254,6 +250,7 @@ impl KmsSigningBackend {
     }
 }
 
+#[async_trait::async_trait]
 impl SigningBackend for KmsSigningBackend {
     async fn sign(&self, _message: &[u8]) -> Result<Signature, CryptoError> {
         // In a real implementation, this would call the appropriate KMS API
@@ -341,6 +338,7 @@ impl InMemorySigningBackend {
 }
 
 #[cfg(test)]
+#[async_trait::async_trait]
 impl SigningBackend for InMemorySigningBackend {
     async fn sign(&self, message: &[u8]) -> Result<Signature, CryptoError> {
         use ed25519_dalek::Signer;

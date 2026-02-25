@@ -71,6 +71,12 @@ governor = { workspace = true }
 # URL
 url = { workspace = true }
 
+# Configuration
+config = { workspace = true }
+
+# Hex encoding
+hex = { workspace = true }
+
 [dev-dependencies]
 tokio-test = { workspace = true }
 wiremock = { workspace = true }

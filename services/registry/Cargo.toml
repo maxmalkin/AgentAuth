@@ -39,6 +39,14 @@ redis = { workspace = true }
 # Cryptography
 ring = { workspace = true }
 ed25519-dalek = { workspace = true }
+rand = { workspace = true }
+base64 = { workspace = true }
+
+# HTTP client (for Vault)
+reqwest = { workspace = true }
+
+# Async
+async-trait = { workspace = true }
 
 # UUID
 uuid = { workspace = true }

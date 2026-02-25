@@ -75,7 +75,7 @@ services:
       --appendonly yes
       --port 6379
     ports:
-      - "6379:6379"
+      - "6399:6379"
     volumes:
       - redis-1-data:/data
     healthcheck:
@@ -98,7 +98,7 @@ services:
       --appendonly yes
       --port 6379
     ports:
-      - "6380:6379"
+      - "6400:6379"
     volumes:
       - redis-2-data:/data
     healthcheck:
@@ -121,7 +121,7 @@ services:
       --appendonly yes
       --port 6379
     ports:
-      - "6381:6379"
+      - "6401:6379"
     volumes:
       - redis-3-data:/data
     healthcheck:
@@ -153,6 +153,58 @@ services:
           --cluster-replicas 0
           --cluster-yes
       "
+    networks:
+      - agentauth-net
+
+  # HashiCorp Vault (Dev Mode)
+  # Used for KMS Transit backend in development
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: agentauth-vault
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev-root-token
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - agentauth-net
+
+  # Vault Initializer - enables Transit and creates keys
+  vault-init:
+    image: hashicorp/vault:1.15
+    container_name: agentauth-vault-init
+    depends_on:
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_TOKEN: dev-root-token
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        set -e
+        echo "Enabling Transit secrets engine..."
+        vault secrets enable transit || echo "Transit already enabled"
+
+        echo "Creating registry signing key..."
+        vault write -f transit/keys/registry-signing-key type=ed25519 || echo "Key already exists"
+
+        echo "Creating agent bootstrap signing key..."
+        vault write -f transit/keys/agent-bootstrap-key type=ed25519 || echo "Key already exists"
+
+        echo "Vault initialization complete!"
+
+        # Keep container running briefly so logs are visible
+        sleep 5
     networks:
       - agentauth-net
 

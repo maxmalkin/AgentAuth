@@ -39,6 +39,9 @@ chrono = { workspace = true }
 # Error handling
 thiserror = { workspace = true }
 
+# Async traits
+async-trait = { workspace = true }
+
 # Tracing (for warn! on dev-only features)
 tracing = { workspace = true }
 
