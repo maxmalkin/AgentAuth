@@ -4,6 +4,7 @@ members = [
     "crates/agentauth-core",
     "crates/agentauth-registry",
     "crates/agentauth-sdk",
+    "crates/agentauth-py",
     "crates/agentauth-schema",
     "services/registry",
     "services/verifier",

@@ -156,7 +156,10 @@ impl Capability {
     /// Returns true if this capability requires two-step confirmation.
     #[must_use]
     pub fn requires_two_step_confirmation(&self) -> bool {
-        matches!(self, Capability::Transact { .. } | Capability::Delete { .. })
+        matches!(
+            self,
+            Capability::Transact { .. } | Capability::Delete { .. }
+        )
     }
 
     /// Returns the capability type as a string.
@@ -176,13 +179,14 @@ impl Capability {
     pub fn to_human_readable(&self) -> String {
         use std::fmt::Write;
         match self {
-            Capability::Read { resource, filter } => {
-                match filter {
-                    Some(f) => format!("Read access to {resource} (filtered: {f})"),
-                    None => format!("Read access to {resource}"),
-                }
-            }
-            Capability::Write { resource, conditions } => {
+            Capability::Read { resource, filter } => match filter {
+                Some(f) => format!("Read access to {resource} (filtered: {f})"),
+                None => format!("Read access to {resource}"),
+            },
+            Capability::Write {
+                resource,
+                conditions,
+            } => {
                 let mut desc = format!("Write access to {resource}");
                 if let Some(cond) = conditions {
                     if cond.append_only {
@@ -194,17 +198,21 @@ impl Capability {
                 }
                 desc
             }
-            Capability::Transact { resource, max_value, currency } => {
+            Capability::Transact {
+                resource,
+                max_value,
+                currency,
+            } => {
                 let curr = currency.as_deref().unwrap_or("units");
                 format!("Transact on {resource} (max {max_value} {curr} per transaction)")
             }
-            Capability::Delete { resource, filter } => {
-                match filter {
-                    Some(f) => format!("Delete from {resource} (filtered: {f})"),
-                    None => format!("Delete from {resource}"),
-                }
-            }
-            Capability::Custom { namespace, name, .. } => {
+            Capability::Delete { resource, filter } => match filter {
+                Some(f) => format!("Delete from {resource} (filtered: {f})"),
+                None => format!("Delete from {resource}"),
+            },
+            Capability::Custom {
+                namespace, name, ..
+            } => {
                 format!("Custom capability: {namespace}:{name}")
             }
         }

@@ -37,8 +37,7 @@ pub async fn create_signing_backend(
                 key = %config.signing_key_id,
                 "Using Vault Transit signing backend"
             );
-            let backend =
-                VaultTransitBackend::new(address, mount, &config.signing_key_id).await?;
+            let backend = VaultTransitBackend::new(address, mount, &config.signing_key_id).await?;
             Ok(Arc::new(backend))
         }
         KmsBackend::EncryptedKeyfile { path } => {
@@ -49,7 +48,9 @@ pub async fn create_signing_backend(
             );
             // For now, create a development backend
             // In a real implementation, this would read and decrypt the keyfile
-            Ok(Arc::new(DevelopmentSigningBackend::new(&config.signing_key_id)))
+            Ok(Arc::new(DevelopmentSigningBackend::new(
+                &config.signing_key_id,
+            )))
         }
     }
 }
@@ -128,8 +129,7 @@ impl VaultTransitBackend {
             .build()?;
 
         // Get token from environment
-        let token = std::env::var("VAULT_TOKEN")
-            .unwrap_or_else(|_| "dev-root-token".to_string());
+        let token = std::env::var("VAULT_TOKEN").unwrap_or_else(|_| "dev-root-token".to_string());
 
         let address = address.trim_end_matches('/').to_string();
         let mount = mount.trim_matches('/').to_string();
@@ -313,7 +313,10 @@ mod tests {
         let signature = backend.sign(message).await.expect("signing should succeed");
         assert_eq!(signature.0.len(), 64);
 
-        let public_key = backend.public_key().await.expect("public_key should succeed");
+        let public_key = backend
+            .public_key()
+            .await
+            .expect("public_key should succeed");
         assert_eq!(public_key.0.len(), 32);
 
         assert_eq!(backend.key_id(), "test-key");

@@ -22,9 +22,7 @@ pub use verification::{verify_key_id, verify_manifest, verify_token};
 /// This is useful when you need to verify a manifest signature
 /// with raw signature bytes rather than a SignedManifest wrapper.
 pub fn manifest_signing_bytes(manifest: &crate::types::AgentManifest) -> Vec<u8> {
-    manifest
-        .to_canonical_bytes()
-        .unwrap_or_default()
+    manifest.to_canonical_bytes().unwrap_or_default()
 }
 
 /// Verifies an agent manifest with raw signature bytes.
@@ -45,8 +43,8 @@ pub fn verify_manifest_bytes(
     signature: &[u8],
 ) -> Result<(), crate::error::CryptoError> {
     use crate::error::CryptoError;
-    use ed25519_dalek::{Signature as DalekSig, Verifier, VerifyingKey};
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+    use ed25519_dalek::{Signature as DalekSig, Verifier, VerifyingKey};
 
     // Get the canonical bytes
     let bytes = manifest

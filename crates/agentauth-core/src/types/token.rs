@@ -210,9 +210,9 @@ impl AgentAccessToken {
     /// Checks if this token grants a specific capability type for a resource.
     #[must_use]
     pub fn has_capability(&self, cap_type: &str, resource: &str) -> bool {
-        self.granted_capabilities.iter().any(|cap| {
-            cap.capability_type() == cap_type && cap.resource() == resource
-        })
+        self.granted_capabilities
+            .iter()
+            .any(|cap| cap.capability_type() == cap_type && cap.resource() == resource)
     }
 }
 

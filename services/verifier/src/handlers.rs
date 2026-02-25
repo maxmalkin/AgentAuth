@@ -3,12 +3,7 @@
 use crate::state::VerifierState;
 use agentauth_core::TokenId;
 use agentauth_registry::db;
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;

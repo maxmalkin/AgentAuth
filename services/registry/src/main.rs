@@ -61,10 +61,12 @@ async fn main() -> anyhow::Result<()> {
 
     // Create signing backend
     // TODO: In production, use KmsSigningBackend based on config.kms
-    let signer = signing::create_signing_backend(&config.kms).await.map_err(|e| {
-        error!(error = %e, "Failed to create signing backend");
-        anyhow::anyhow!("Failed to create signing backend: {e}")
-    })?;
+    let signer = signing::create_signing_backend(&config.kms)
+        .await
+        .map_err(|e| {
+            error!(error = %e, "Failed to create signing backend");
+            anyhow::anyhow!("Failed to create signing backend: {e}")
+        })?;
 
     // Create services
     let audit = Arc::new(AuditService::new(db.clone(), signer.clone()));

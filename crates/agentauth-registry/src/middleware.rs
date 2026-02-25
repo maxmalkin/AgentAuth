@@ -23,7 +23,9 @@ pub async fn request_id_middleware(mut request: Request, next: Next) -> Response
         .map_or_else(|| Uuid::now_v7().to_string(), ToString::to_string);
 
     // Store request ID in extensions
-    request.extensions_mut().insert(RequestId(request_id.clone()));
+    request
+        .extensions_mut()
+        .insert(RequestId(request_id.clone()));
 
     let mut response = next.run(request).await;
 
@@ -166,9 +168,10 @@ pub async fn in_flight_limit_middleware(
     request: Request,
     next: Next,
 ) -> Result<Response, (StatusCode, &'static str)> {
-    let _guard = limiter
-        .try_acquire()
-        .ok_or((StatusCode::SERVICE_UNAVAILABLE, "too many concurrent requests"))?;
+    let _guard = limiter.try_acquire().ok_or((
+        StatusCode::SERVICE_UNAVAILABLE,
+        "too many concurrent requests",
+    ))?;
 
     Ok(next.run(request).await)
 }

@@ -124,11 +124,7 @@ impl CacheService {
 
     /// Check if a nonce has been used (and mark it as used).
     /// Returns true if nonce was already used (replay detected).
-    pub async fn check_and_set_nonce(
-        &self,
-        nonce: &str,
-        ttl: Duration,
-    ) -> Result<bool> {
+    pub async fn check_and_set_nonce(&self, nonce: &str, ttl: Duration) -> Result<bool> {
         let mut conn = self.conn.clone();
         let key = format!("{}{}", self.nonce_prefix, nonce);
 

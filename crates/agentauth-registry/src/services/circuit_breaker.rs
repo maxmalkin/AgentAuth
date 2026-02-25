@@ -361,8 +361,14 @@ impl CircuitBreakers {
     /// Get all circuit breaker states for metrics.
     pub async fn all_states(&self) -> Vec<(&str, CircuitState)> {
         vec![
-            (self.postgres_primary.name(), self.postgres_primary.state().await),
-            (self.postgres_replica.name(), self.postgres_replica.state().await),
+            (
+                self.postgres_primary.name(),
+                self.postgres_primary.state().await,
+            ),
+            (
+                self.postgres_replica.name(),
+                self.postgres_replica.state().await,
+            ),
             (self.redis.name(), self.redis.state().await),
             (self.kms_signing.name(), self.kms_signing.state().await),
             (self.kms_key_fetch.name(), self.kms_key_fetch.state().await),

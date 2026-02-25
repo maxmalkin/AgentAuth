@@ -152,7 +152,9 @@ pub async fn bootstrap_agent(
     // Sign the manifest using the registry's signing backend
     let signature = state
         .signer
-        .sign(&agentauth_core::crypto::manifest_signing_bytes(&req.manifest))
+        .sign(&agentauth_core::crypto::manifest_signing_bytes(
+            &req.manifest,
+        ))
         .await
         .map_err(|e| RegistryError::Internal(format!("failed to sign manifest: {e}")))?;
 
@@ -223,9 +225,7 @@ pub async fn delete_agent(
     // Record audit event
     let _ = state
         .audit
-        .record(
-            AuditEvent::new(AuditEventType::AgentRevoked).agent_id(*agent_id.as_uuid()),
-        )
+        .record(AuditEvent::new(AuditEventType::AgentRevoked).agent_id(*agent_id.as_uuid()))
         .await;
 
     Ok(StatusCode::NO_CONTENT)
@@ -233,9 +233,8 @@ pub async fn delete_agent(
 
 /// Convert database row to response.
 fn row_to_response(row: &AgentRow) -> Result<AgentResponse> {
-    let capabilities: Vec<Capability> =
-        serde_json::from_value(row.requested_capabilities.clone())
-            .map_err(|e| RegistryError::Internal(format!("failed to parse capabilities: {e}")))?;
+    let capabilities: Vec<Capability> = serde_json::from_value(row.requested_capabilities.clone())
+        .map_err(|e| RegistryError::Internal(format!("failed to parse capabilities: {e}")))?;
 
     let envelope: BehavioralEnvelope =
         serde_json::from_value(row.default_behavioral_envelope.clone())

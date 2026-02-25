@@ -203,9 +203,7 @@ pub async fn verify_agent_audit_chain(
 ///
 /// This is primarily used for internal audit recording from other services.
 /// In production, audit events are recorded atomically with primary operations.
-pub async fn record_audit_event(
-    State(_state): State<AppState>,
-) -> Result<impl IntoResponse> {
+pub async fn record_audit_event(State(_state): State<AppState>) -> Result<impl IntoResponse> {
     // This endpoint is restricted to internal use only.
     // External callers cannot forge audit events.
     Err::<(), _>(RegistryError::Internal(
@@ -319,7 +317,8 @@ async fn query_audit_events_for_verification(
         .map(|r| {
             let mut prev_hash = [0u8; 32];
             let mut row_hash = [0u8; 32];
-            prev_hash.copy_from_slice(&r.previous_event_hash[..32.min(r.previous_event_hash.len())]);
+            prev_hash
+                .copy_from_slice(&r.previous_event_hash[..32.min(r.previous_event_hash.len())]);
             row_hash.copy_from_slice(&r.row_hash[..32.min(r.row_hash.len())]);
 
             AuditEventVerificationRow {

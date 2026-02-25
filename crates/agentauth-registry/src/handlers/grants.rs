@@ -3,7 +3,9 @@
 use crate::error::{RegistryError, Result};
 use crate::services::{AuditEvent, AuditEventType};
 use crate::state::AppState;
-use agentauth_core::{AgentId, BehavioralEnvelope, Capability, CapabilityGrant, GrantId, GrantStatus};
+use agentauth_core::{
+    AgentId, BehavioralEnvelope, Capability, CapabilityGrant, GrantId, GrantStatus,
+};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -220,7 +222,10 @@ pub async fn revoke_grant(
 /// Convert grant to response.
 fn grant_to_response(grant: &CapabilityGrant) -> GrantResponse {
     // Extract approved_by from the approval assertion if present
-    let approved_by = grant.approval_assertion.as_ref().map(|_| grant.human_principal_id.0);
+    let approved_by = grant
+        .approval_assertion
+        .as_ref()
+        .map(|_| grant.human_principal_id.0);
 
     GrantResponse {
         id: *grant.id.as_uuid(),

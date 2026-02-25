@@ -15,7 +15,10 @@ pub fn create_router(state: AppState) -> Router {
         .route("/health/ready", get(handlers::readiness))
         .route("/health/startup", get(handlers::startup))
         // Discovery endpoints
-        .route("/.well-known/agentauth", get(handlers::get_discovery_document))
+        .route(
+            "/.well-known/agentauth",
+            get(handlers::get_discovery_document),
+        )
         .route("/.well-known/agentauth/keys", get(handlers::get_keys))
         // Agent endpoints
         .route("/v1/agents/register", post(handlers::register_agent))
@@ -25,7 +28,10 @@ pub fn create_router(state: AppState) -> Router {
         // Grant endpoints
         .route("/v1/grants/request", post(handlers::request_grant))
         .route("/v1/grants/:grant_id", get(handlers::get_grant))
-        .route("/v1/grants/:grant_id/approve", post(handlers::approve_grant))
+        .route(
+            "/v1/grants/:grant_id/approve",
+            post(handlers::approve_grant),
+        )
         .route("/v1/grants/:grant_id/deny", post(handlers::deny_grant))
         .route("/v1/grants/:grant_id/revoke", post(handlers::revoke_grant))
         // Token endpoints
