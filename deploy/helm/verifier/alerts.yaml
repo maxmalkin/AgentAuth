@@ -1,0 +1,133 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: agentauth-verifier-alerts
+  labels:
+    app: agentauth-verifier
+spec:
+  groups:
+    - name: agentauth-verifier
+      rules:
+        # Token verification high error rate
+        - alert: TokenVerifyHighErrorRate
+          expr: |
+            (
+              sum(rate(agentauth_http_requests_total{service="verifier",path="/v1/tokens/verify",status=~"5.."}[5m]))
+              /
+              sum(rate(agentauth_http_requests_total{service="verifier",path="/v1/tokens/verify"}[5m]))
+            ) > 0.001
+          for: 5m
+          labels:
+            severity: critical
+            service: verifier
+          annotations:
+            summary: "High token verification error rate"
+            description: "Token verification error rate is above 0.1% for the last 5 minutes"
+            runbook_url: "https://docs.agentauth.io/runbook#token-verify-errors"
+
+        # Token verification high latency
+        - alert: TokenVerifyHighLatency
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(agentauth_http_request_duration_seconds_bucket{service="verifier",path="/v1/tokens/verify"}[10m])) by (le)
+            ) > 0.005
+          for: 10m
+          labels:
+            severity: warning
+            service: verifier
+          annotations:
+            summary: "High token verification latency"
+            description: "Token verification p99 latency is above 5ms"
+            runbook_url: "https://docs.agentauth.io/runbook#token-verify-latency"
+
+        # Circuit breaker open
+        - alert: CircuitBreakerOpen
+          expr: agentauth_circuit_breaker_state{service="verifier"} == 1
+          for: 2m
+          labels:
+            severity: warning
+            service: verifier
+          annotations:
+            summary: "Circuit breaker open for {{ $labels.dependency }}"
+            description: "Circuit breaker for {{ $labels.dependency }} has been open for more than 2 minutes"
+            runbook_url: "https://docs.agentauth.io/runbook#circuit-breaker"
+
+        # Revocation lag high
+        - alert: RevocationLagHigh
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(agentauth_revocation_propagation_seconds_bucket{service="verifier"}[5m])) by (le)
+            ) > 0.2
+          for: 5m
+          labels:
+            severity: critical
+            service: verifier
+          annotations:
+            summary: "High revocation propagation latency"
+            description: "Revocation propagation p99 is above 200ms"
+            runbook_url: "https://docs.agentauth.io/runbook#revocation-lag"
+
+        # Nonce store near capacity
+        - alert: NonceStoreNearCapacity
+          expr: agentauth_nonce_store_memory_pct{service="verifier"} > 0.7
+          for: 2m
+          labels:
+            severity: critical
+            service: verifier
+          annotations:
+            summary: "Nonce store near capacity"
+            description: "Nonce store Redis memory is above 70% - risk of replay attacks if eviction occurs"
+            runbook_url: "https://docs.agentauth.io/runbook#nonce-store"
+
+        # Cache hit ratio low
+        - alert: CacheHitRatioLow
+          expr: agentauth_cache_hit_ratio{service="verifier",cache="token"} < 0.9
+          for: 10m
+          labels:
+            severity: warning
+            service: verifier
+          annotations:
+            summary: "Low token cache hit ratio"
+            description: "Token cache hit ratio is below 90% - database load may increase"
+            runbook_url: "https://docs.agentauth.io/runbook#cache-hit-ratio"
+
+        # Redis unavailable
+        - alert: RedisUnavailable
+          expr: agentauth_redis_operations_total{service="verifier",status="error"} > 0
+          for: 1m
+          labels:
+            severity: critical
+            service: verifier
+          annotations:
+            summary: "Redis connection errors"
+            description: "Verifier is experiencing Redis connection errors"
+            runbook_url: "https://docs.agentauth.io/runbook#redis-unavailable"
+
+        # SLO error budget burn
+        - alert: SLOErrorBudgetBurn
+          expr: |
+            (
+              sum(increase(agentauth_http_requests_total{service="verifier",status=~"5.."}[1h]))
+              /
+              sum(increase(agentauth_http_requests_total{service="verifier"}[1h]))
+            ) > (5 * 0.0001)
+          for: 1h
+          labels:
+            severity: critical
+            service: verifier
+          annotations:
+            summary: "SLO error budget burning too fast"
+            description: "Verifier error budget burn rate is 5x normal for the last hour (99.99% SLO)"
+            runbook_url: "https://docs.agentauth.io/runbook#slo-budget"
+
+        # Pod OOM killed
+        - alert: PodOOMKilled
+          expr: |
+            increase(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",namespace="agentauth",container="verifier"}[5m]) > 0
+          labels:
+            severity: warning
+            service: verifier
+          annotations:
+            summary: "Verifier pod OOM killed"
+            description: "A verifier pod was OOM killed"
+            runbook_url: "https://docs.agentauth.io/runbook#oom"

@@ -1,0 +1,63 @@
+# Chaos Experiment: PostgreSQL Primary Failure
+#
+# This experiment simulates the failure of the PostgreSQL primary node
+# to test failover behavior and read replica promotion.
+
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: db-primary-failure
+  namespace: agentauth
+spec:
+  action: pod-kill
+  mode: one
+  selector:
+    namespaces:
+      - agentauth
+    labelSelectors:
+      app: postgresql
+      role: primary
+  duration: "60s"
+
+---
+# Experiment Documentation
+
+# Hypothesis:
+# When the PostgreSQL primary fails:
+# 1. Write operations (token issuance) should fail gracefully with 503
+# 2. Read operations should continue via read replicas
+# 3. Token verification should be unaffected (Redis + read replicas)
+# 4. Failover should complete within 60 seconds
+# 5. Zero data loss should occur
+
+# Steady State Definition:
+# - Token issuance success rate > 99.9%
+# - Token verification success rate > 99.99%
+# - Database replica lag < 1 second
+# - All circuit breakers closed
+
+# Experiment Procedure:
+# 1. Establish steady state metrics baseline (5 minutes)
+# 2. Kill PostgreSQL primary pod
+# 3. Monitor metrics during failover (up to 2 minutes)
+# 4. Verify new primary is elected
+# 5. Monitor recovery for 5 minutes
+
+# Expected Results:
+# During failover:
+# - Token issuance fails with 503 (acceptable)
+# - Token verification continues (reads from replica)
+# - Database circuit breaker opens for writes
+# - Audit writes buffer in memory
+#
+# After recovery:
+# - New primary is serving writes within 60 seconds
+# - Buffered audit events are flushed
+# - Circuit breaker closes
+# - No data loss in audit chain
+
+# Safety Measures:
+# - Run only in staging environment
+# - Verify backup is recent before experiment
+# - Have DBA on standby for manual intervention
+# - Monitor audit buffer capacity during experiment

@@ -1,0 +1,69 @@
+# Chaos Experiment: Redis Network Partition
+#
+# This experiment simulates a network partition in the Redis cluster,
+# splitting it into two halves that cannot communicate.
+
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: redis-partition
+  namespace: agentauth
+spec:
+  action: partition
+  mode: all
+  selector:
+    namespaces:
+      - agentauth
+    labelSelectors:
+      app: redis
+  direction: both
+  target:
+    selector:
+      namespaces:
+        - agentauth
+      labelSelectors:
+        app: redis
+    mode: fixed-percent
+    value: "50"
+  duration: "5m"
+
+---
+# Experiment Documentation
+
+# Hypothesis:
+# When Redis cluster is partitioned, the verifier service should:
+# 1. Fall back to PostgreSQL for token verification
+# 2. p99 latency should degrade but stay under 50ms
+# 3. Error rate should stay below 1%
+# 4. Circuit breaker for Redis should open within 30 seconds
+# 5. No tokens should be incorrectly validated or rejected
+
+# Steady State Definition:
+# - Token verification p99 < 5ms
+# - Error rate < 0.01%
+# - Cache hit ratio > 95%
+# - All circuit breakers closed
+
+# Experiment Procedure:
+# 1. Establish steady state metrics baseline (5 minutes)
+# 2. Apply network partition to Redis cluster
+# 3. Monitor metrics for 5 minutes during partition
+# 4. Remove partition
+# 5. Monitor recovery for 5 minutes
+
+# Expected Results:
+# During partition:
+# - Redis circuit breaker opens
+# - Cache hit ratio drops to ~50% (partitioned half)
+# - Latency increases to 10-30ms (database fallback)
+# - Error rate < 1%
+#
+# After recovery:
+# - Circuit breaker closes within 30 seconds
+# - Latency returns to <5ms within 2 minutes
+# - Cache hit ratio returns to >95% within 5 minutes
+
+# Safety Measures:
+# - Run only in staging environment
+# - Have rollback command ready: kubectl delete networkchaos redis-partition -n agentauth
+# - Monitor customer-facing error rates during experiment
