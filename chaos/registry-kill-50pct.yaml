@@ -1,0 +1,64 @@
+# Chaos Experiment: Kill 50% of Registry Replicas
+#
+# This experiment kills 50% of registry replicas simultaneously
+# to test PodDisruptionBudget enforcement and load redistribution.
+
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: registry-kill-50pct
+  namespace: agentauth
+spec:
+  action: pod-kill
+  mode: fixed-percent
+  value: "50"
+  selector:
+    namespaces:
+      - agentauth
+    labelSelectors:
+      app: registry
+  duration: "30s"
+
+---
+# Experiment Documentation
+
+# Hypothesis:
+# When 50% of registry replicas are killed simultaneously:
+# 1. PodDisruptionBudget should allow this (minAvailable: 2 with 5 replicas)
+# 2. Zero client-visible errors should occur
+# 3. Surviving replicas should handle the redistributed load
+# 4. New pods should be scheduled and become ready within 60 seconds
+# 5. Request latency may increase but should stay within SLO
+
+# Steady State Definition:
+# - Token issuance success rate > 99.9%
+# - Token issuance p99 < 50ms
+# - All registry replicas healthy
+# - Load evenly distributed across replicas
+
+# Experiment Procedure:
+# 1. Verify current replica count (should be >= 4)
+# 2. Establish steady state metrics baseline (5 minutes)
+# 3. Start load test at normal traffic level
+# 4. Kill 50% of registry pods
+# 5. Monitor metrics during recovery (2 minutes)
+# 6. Verify new pods are healthy
+
+# Expected Results:
+# During failure:
+# - Some in-flight requests on killed pods may fail
+# - Surviving replicas see ~2x traffic
+# - Latency may spike briefly
+# - Error rate stays < 0.1% (retries should succeed)
+#
+# After recovery:
+# - New pods scheduled within 30 seconds
+# - Traffic redistributed within 60 seconds
+# - Latency returns to baseline
+# - No sustained increase in error rate
+
+# Safety Measures:
+# - Run only in staging environment
+# - Verify PodDisruptionBudget is configured
+# - Start with lower kill percentage if concerned
+# - Have HPA scaling in place for load spike handling

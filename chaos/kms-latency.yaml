@@ -1,0 +1,70 @@
+# Chaos Experiment: KMS High Latency
+#
+# This experiment adds 2-second latency to all KMS (signing) operations
+# to test circuit breaker behavior and degraded mode operation.
+
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: kms-latency
+  namespace: agentauth
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - agentauth
+    labelSelectors:
+      app: registry
+  delay:
+    latency: "2000ms"
+    correlation: "100"
+    jitter: "0ms"
+  direction: to
+  externalTargets:
+    - "kms.amazonaws.com"
+    - "cloudkms.googleapis.com"
+  duration: "5m"
+
+---
+# Experiment Documentation
+
+# Hypothesis:
+# When KMS operations experience 2-second latency:
+# 1. Circuit breaker for KMS should open within 30 seconds
+# 2. New token issuance should fail with 503
+# 3. Existing tokens should continue to verify (cached public keys)
+# 4. Token verification latency should be unaffected
+# 5. System should recover when latency is removed
+
+# Steady State Definition:
+# - Token issuance p99 < 50ms
+# - Token issuance success rate > 99.9%
+# - KMS circuit breaker closed
+# - Cached public keys present
+
+# Experiment Procedure:
+# 1. Verify public keys are cached
+# 2. Establish steady state metrics baseline (5 minutes)
+# 3. Apply 2-second latency to KMS endpoints
+# 4. Monitor metrics for 5 minutes during degraded state
+# 5. Remove latency injection
+# 6. Monitor recovery for 5 minutes
+
+# Expected Results:
+# During degraded state:
+# - KMS circuit breaker opens within 30 seconds
+# - Token issuance fails with 503
+# - Token verification continues normally (using cached keys)
+# - No increase in verification latency
+#
+# After recovery:
+# - Circuit breaker enters half-open state
+# - Token issuance resumes within 60 seconds
+# - No impact to existing valid tokens
+
+# Safety Measures:
+# - Run only in staging environment
+# - Verify public keys are cached before starting
+# - Monitor existing token verification during experiment
+# - Have circuit breaker reset command ready if needed

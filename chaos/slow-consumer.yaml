@@ -1,0 +1,82 @@
+# Chaos Experiment: Slow Audit Consumer
+#
+# This experiment simulates slow audit event writes by adding latency
+# to PostgreSQL audit table operations, testing backpressure handling.
+
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: slow-consumer
+  namespace: agentauth
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - agentauth
+    labelSelectors:
+      app: registry
+  delay:
+    latency: "5000ms"
+    correlation: "100"
+  direction: to
+  target:
+    selector:
+      namespaces:
+        - agentauth
+      labelSelectors:
+        app: postgresql
+    mode: all
+  duration: "5m"
+
+---
+# Experiment Documentation
+
+# Hypothesis:
+# When audit writes take 5 seconds each:
+# 1. Audit buffer should start filling
+# 2. Buffer capacity alert should fire at 70%
+# 3. When buffer is full, primary operations should fail gracefully
+# 4. No audit events should be silently dropped
+# 5. System should recover when latency is removed
+
+# Steady State Definition:
+# - Audit buffer usage < 10%
+# - Audit write lag < 1 second
+# - Token issuance success rate > 99.9%
+# - All audit events written successfully
+
+# Experiment Procedure:
+# 1. Establish steady state metrics baseline (5 minutes)
+# 2. Apply 5-second latency to PostgreSQL writes
+# 3. Monitor audit buffer fill rate
+# 4. Observe behavior when buffer reaches 70% (alert should fire)
+# 5. If buffer reaches 100%, observe operation failures
+# 6. Remove latency injection
+# 7. Monitor buffer drain and recovery
+
+# Expected Results:
+# During degraded state:
+# - Audit buffer fills at rate proportional to operation rate
+# - Alert fires when buffer > 70%
+# - When buffer full:
+#   - Token issuance fails with 503
+#   - Error message indicates audit capacity issue
+#   - No events are dropped
+#
+# After recovery:
+# - Buffer drains as backlog is processed
+# - Operations resume when buffer has capacity
+# - All buffered events are eventually written
+# - Audit chain integrity is maintained
+
+# Safety Measures:
+# - Run only in staging environment
+# - Monitor buffer very closely - alert at 70%, stop at 85%
+# - Be prepared to reduce traffic or stop experiment early
+# - Verify audit chain integrity after experiment
+
+# Critical Note:
+# This experiment tests a security-critical invariant: audit events
+# must never be dropped. The system should fail operations rather
+# than lose audit data. Verify this behavior carefully.
