@@ -26,20 +26,26 @@ jobs:
         with:
           components: clippy, rustfmt
 
-      - name: Cache cargo registry
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          cache-all-crates: true
+
+      - name: Cache cargo binaries
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          path: ~/.cargo/bin
+          key: ${{ runner.os }}-cargo-bin-${{ hashFiles('.github/workflows/ci.yml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-cargo-bin-
 
       - name: Install cargo tools
         run: |
-          cargo install cargo-nextest cargo-audit cargo-deny --locked || true
+          # Only install if not already cached
+          command -v cargo-nextest >/dev/null 2>&1 || cargo install cargo-nextest --locked
+          command -v cargo-audit >/dev/null 2>&1 || cargo install cargo-audit --locked
+          command -v cargo-deny >/dev/null 2>&1 || cargo install cargo-deny --locked
 
       # Step 1: cargo check
       - name: Check workspace
@@ -95,20 +101,25 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo registry
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          cache-all-crates: true
+
+      - name: Cache cargo binaries
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          path: ~/.cargo/bin
+          key: ${{ runner.os }}-cargo-bin-${{ hashFiles('.github/workflows/ci.yml') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-cargo-bin-
 
       - name: Install cargo tools
         run: |
-          cargo install cargo-nextest sqlx-cli --locked || true
+          # Only install if not already cached
+          command -v cargo-nextest >/dev/null 2>&1 || cargo install cargo-nextest --locked
+          command -v sqlx >/dev/null 2>&1 || cargo install sqlx-cli --locked --no-default-features --features postgres
 
       # Step 7-8: Database migrations
       - name: Run migrations
@@ -188,6 +199,11 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
 
       - name: Build documentation
         run: cargo doc --no-deps --workspace
