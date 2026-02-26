@@ -1,0 +1,118 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: agentauth-registry-alerts
+  labels:
+    app: agentauth-registry
+spec:
+  groups:
+    - name: agentauth-registry
+      rules:
+        # Token issuance error rate
+        - alert: TokenIssueHighErrorRate
+          expr: |
+            (
+              sum(rate(agentauth_http_requests_total{path="/v1/tokens/issue",status=~"5.."}[5m]))
+              /
+              sum(rate(agentauth_http_requests_total{path="/v1/tokens/issue"}[5m]))
+            ) > 0.001
+          for: 5m
+          labels:
+            severity: critical
+            service: registry
+          annotations:
+            summary: "High token issuance error rate"
+            description: "Token issuance error rate is above 0.1% for the last 5 minutes"
+            runbook_url: "https://docs.agentauth.io/runbook#token-issue-errors"
+
+        # Token issuance latency
+        - alert: TokenIssueHighLatency
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(agentauth_http_request_duration_seconds_bucket{path="/v1/tokens/issue"}[10m])) by (le)
+            ) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+            service: registry
+          annotations:
+            summary: "High token issuance latency"
+            description: "Token issuance p99 latency is above 50ms"
+            runbook_url: "https://docs.agentauth.io/runbook#token-issue-latency"
+
+        # Circuit breaker open
+        - alert: CircuitBreakerOpen
+          expr: agentauth_circuit_breaker_state{service="registry"} == 1
+          for: 2m
+          labels:
+            severity: warning
+            service: registry
+          annotations:
+            summary: "Circuit breaker open for {{ $labels.dependency }}"
+            description: "Circuit breaker for {{ $labels.dependency }} has been open for more than 2 minutes"
+            runbook_url: "https://docs.agentauth.io/runbook#circuit-breaker"
+
+        # Audit write lag
+        - alert: AuditWriteLagHigh
+          expr: agentauth_audit_write_lag_seconds{service="registry"} > 30
+          for: 5m
+          labels:
+            severity: warning
+            service: registry
+          annotations:
+            summary: "High audit write lag"
+            description: "Audit write lag is above 30 seconds"
+            runbook_url: "https://docs.agentauth.io/runbook#audit-lag"
+
+        # Audit buffer near capacity
+        - alert: AuditBufferNearCapacity
+          expr: agentauth_audit_buffer_pct{service="registry"} > 0.7
+          for: 2m
+          labels:
+            severity: critical
+            service: registry
+          annotations:
+            summary: "Audit buffer near capacity"
+            description: "Audit buffer is above 70% capacity - risk of losing audit events"
+            runbook_url: "https://docs.agentauth.io/runbook#audit-buffer"
+
+        # Database replica lag
+        - alert: DatabaseReplicaLag
+          expr: pg_replication_lag{service="registry"} > 5
+          for: 5m
+          labels:
+            severity: warning
+            service: registry
+          annotations:
+            summary: "High database replica lag"
+            description: "PostgreSQL replica lag is above 5 seconds"
+            runbook_url: "https://docs.agentauth.io/runbook#replica-lag"
+
+        # SLO error budget burn
+        - alert: SLOErrorBudgetBurn
+          expr: |
+            (
+              sum(increase(agentauth_http_requests_total{status=~"5.."}[1h]))
+              /
+              sum(increase(agentauth_http_requests_total[1h]))
+            ) > (5 * 0.001)
+          for: 1h
+          labels:
+            severity: critical
+            service: registry
+          annotations:
+            summary: "SLO error budget burning too fast"
+            description: "Error budget burn rate is 5x normal for the last hour"
+            runbook_url: "https://docs.agentauth.io/runbook#slo-budget"
+
+        # Pod OOM killed
+        - alert: PodOOMKilled
+          expr: |
+            increase(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",namespace="agentauth",container="registry"}[5m]) > 0
+          labels:
+            severity: warning
+            service: registry
+          annotations:
+            summary: "Registry pod OOM killed"
+            description: "A registry pod was OOM killed"
+            runbook_url: "https://docs.agentauth.io/runbook#oom"

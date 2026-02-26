@@ -1,0 +1,69 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: agentauth-audit-archiver-alerts
+  labels:
+    app: agentauth-audit-archiver
+spec:
+  groups:
+    - name: agentauth-audit-archiver
+      rules:
+        # Archival job failed
+        - alert: ArchivalJobFailed
+          expr: agentauth_archival_job_status{service="audit-archiver"} == 0
+          for: 5m
+          labels:
+            severity: warning
+            service: audit-archiver
+          annotations:
+            summary: "Audit archival job failed"
+            description: "The audit archival job has failed"
+            runbook_url: "https://docs.agentauth.io/runbook#archival-failed"
+
+        # Partition creation failed
+        - alert: PartitionCreationFailed
+          expr: agentauth_partition_creation_status{service="audit-archiver"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            service: audit-archiver
+          annotations:
+            summary: "Audit partition creation failed"
+            description: "Failed to create next month's audit partition - may cause audit write failures"
+            runbook_url: "https://docs.agentauth.io/runbook#partition-creation"
+
+        # Archival lag high
+        - alert: ArchivalLagHigh
+          expr: agentauth_archival_lag_days{service="audit-archiver"} > 7
+          for: 1h
+          labels:
+            severity: warning
+            service: audit-archiver
+          annotations:
+            summary: "High audit archival lag"
+            description: "Audit archival is more than 7 days behind"
+            runbook_url: "https://docs.agentauth.io/runbook#archival-lag"
+
+        # Cold storage upload failed
+        - alert: ColdStorageUploadFailed
+          expr: agentauth_cold_storage_upload_status{service="audit-archiver"} == 0
+          for: 30m
+          labels:
+            severity: warning
+            service: audit-archiver
+          annotations:
+            summary: "Cold storage upload failed"
+            description: "Failed to upload archived audit data to cold storage"
+            runbook_url: "https://docs.agentauth.io/runbook#cold-storage"
+
+        # Pod OOM killed
+        - alert: PodOOMKilled
+          expr: |
+            increase(kube_pod_container_status_last_terminated_reason{reason="OOMKilled",namespace="agentauth",container="audit-archiver"}[5m]) > 0
+          labels:
+            severity: warning
+            service: audit-archiver
+          annotations:
+            summary: "Audit archiver pod OOM killed"
+            description: "The audit archiver pod was OOM killed"
+            runbook_url: "https://docs.agentauth.io/runbook#oom"
