@@ -9,6 +9,7 @@ members = [
     "services/registry",
     "services/verifier",
     "services/audit-archiver",
+    "tests/compliance",
 ]
 
 [workspace.package]
