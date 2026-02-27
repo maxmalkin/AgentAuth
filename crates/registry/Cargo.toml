@@ -1,6 +1,6 @@
 [package]
-name = "registry-bin"
-description = "AgentAuth Registry Service - full CRUD, KMS access, token issuance"
+name = "registry"
+description = "Registry and IdP service logic for AgentAuth"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,30 +8,26 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
-[[bin]]
-name = "registry"
-path = "src/main.rs"
-
 [dependencies]
-auth_core = { package = "core", path = "../../crates/core" }
-registry = { path = "../../crates/registry" }
+auth_core = { package = "core", path = "../core" }
 
 # Async runtime
 tokio = { workspace = true }
 
 # Web framework
 axum = { workspace = true }
+axum-extra = { workspace = true }
 tower = { workspace = true }
 tower-http = { workspace = true }
-hyper = { workspace = true }
-hyper-util = { workspace = true }
 
 # Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
+prost = { workspace = true }
 
 # Database
 sqlx = { workspace = true }
+deadpool-postgres = { workspace = true }
 
 # Redis
 redis = { workspace = true }
@@ -39,14 +35,10 @@ redis = { workspace = true }
 # Cryptography
 ring = { workspace = true }
 ed25519-dalek = { workspace = true }
+sha2 = { workspace = true }
 rand = { workspace = true }
+subtle = { workspace = true }
 base64 = { workspace = true }
-
-# HTTP client (for Vault)
-reqwest = { workspace = true }
-
-# Async
-async-trait = { workspace = true }
 
 # UUID
 uuid = { workspace = true }
@@ -55,6 +47,7 @@ uuid = { workspace = true }
 chrono = { workspace = true }
 
 # Error handling
+thiserror = { workspace = true }
 anyhow = { workspace = true }
 
 # Tracing / Observability
@@ -69,12 +62,25 @@ opentelemetry-otlp = { workspace = true }
 metrics = { workspace = true }
 metrics-exporter-prometheus = { workspace = true }
 
-# Configuration
-config = { workspace = true }
-dotenvy = { workspace = true }
+# Circuit breaker
+failsafe = { workspace = true }
+
+# Rate limiting
+governor = { workspace = true }
 
 # URL
 url = { workspace = true }
+
+# Configuration
+config = { workspace = true }
+
+# Hex encoding
+hex = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { workspace = true }
+wiremock = { workspace = true }
+fake = { workspace = true }
 
 [lints]
 workspace = true

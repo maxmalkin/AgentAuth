@@ -7,7 +7,7 @@
 
 mod signing;
 
-use agentauth_registry::{
+use registry::{
     config::RegistryConfig,
     db::DbPool,
     middleware::{compression_layer, cors_layer, logging_middleware, request_id_middleware},

@@ -2,7 +2,7 @@
 //!
 //! Verifies that agents cannot request or use capabilities beyond their manifest.
 
-use agentauth_core::types::{
+use auth_core::types::{
     AgentAccessToken, AgentId, AgentManifest, BehavioralEnvelope, Capability,
     HumanPrincipalId, ServiceProviderId, TokenId,
 };

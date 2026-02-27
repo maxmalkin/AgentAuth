@@ -2,7 +2,7 @@
 //!
 //! Verifies that stolen AATs without the DPoP private key are rejected.
 
-use agentauth_sdk::dpop::DpopGenerator;
+use sdk::dpop::DpopGenerator;
 
 fn test_key(seed: u8) -> [u8; 32] {
     let mut key = [0u8; 32];

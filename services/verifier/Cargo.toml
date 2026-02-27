@@ -1,5 +1,5 @@
 [package]
-name = "agentauth-verifier-bin"
+name = "verifier-bin"
 description = "AgentAuth Verifier Service - read-only token verification, high replica count"
 version.workspace = true
 edition.workspace = true
@@ -13,8 +13,8 @@ name = "verifier"
 path = "src/main.rs"
 
 [dependencies]
-agentauth-core = { path = "../../crates/agentauth-core" }
-agentauth-registry = { path = "../../crates/agentauth-registry" }
+auth_core = { package = "core", path = "../../crates/core" }
+registry = { path = "../../crates/registry" }
 
 # Async runtime
 tokio = { workspace = true }

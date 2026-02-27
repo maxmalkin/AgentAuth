@@ -1,6 +1,6 @@
 //! Verifier service configuration.
 
-use agentauth_registry::config::{DatabaseConfig, ObservabilityConfig, RedisConfig};
+use registry::config::{DatabaseConfig, ObservabilityConfig, RedisConfig};
 use serde::Deserialize;
 
 /// Verifier service configuration.

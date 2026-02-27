@@ -1,8 +1,8 @@
 //! Verifier request handlers.
 
 use crate::state::VerifierState;
-use agentauth_core::TokenId;
-use agentauth_registry::db;
+use auth_core::TokenId;
+use registry::db;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};

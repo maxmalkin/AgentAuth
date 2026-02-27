@@ -175,7 +175,7 @@ jobs:
 
       - name: Start services
         run: |
-          ./target/release/agentauth-registry &
+          ./target/release/registry &
           ./target/release/agentauth-verifier &
           sleep 10
         env:
