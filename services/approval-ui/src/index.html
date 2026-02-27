@@ -3,7 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AgentAuth Approval</title>
+    <title>AgentAuth // Control</title>
+    <meta name="theme-color" content="#0a0a0f" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              panel: '#111118',
+              'panel-raised': '#1a1a24',
+              'panel-hover': '#22222e',
+              surface: '#0a0a0f',
+              border: '#2a2a3a',
+              'border-bright': '#3a3a4e',
+              'text-primary': '#e8e8f0',
+              'text-secondary': '#8888a0',
+              'text-muted': '#555568',
+              amber: '#f59e0b',
+              'amber-dim': '#b45309',
+              'amber-glow': 'rgba(245, 158, 11, 0.15)',
+              red: '#ef4444',
+              'red-dim': '#991b1b',
+              'red-glow': 'rgba(239, 68, 68, 0.12)',
+              green: '#10b981',
+              'green-dim': '#065f46',
+              'green-glow': 'rgba(16, 185, 129, 0.12)',
+              blue: '#3b82f6',
+              'blue-dim': '#1e3a5f',
+            },
+            fontFamily: {
+              mono: ["'JetBrains Mono'", "'SF Mono'", "'Fira Code'", "'Cascadia Code'", 'monospace'],
+              sans: ["'DM Sans'", "'Inter'", 'system-ui', '-apple-system', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

@@ -1,5 +1,3 @@
-// Agents list page - shows all agents for the current human principal
-
 import { useState, useEffect } from 'react';
 import { Link } from '../Router';
 import { listAgents, checkHealth } from '../api';
@@ -19,17 +17,15 @@ export function AgentsPage() {
 
   async function loadAgents() {
     setState({ type: 'loading' });
-
     const isHealthy = await checkHealth();
     if (!isHealthy) {
       setState({
         type: 'error',
-        message: 'Unable to connect to the AgentAuth registry. Please try again later.',
+        message: 'Unable to establish connection with AgentAuth registry.',
         isOffline: true,
       });
       return;
     }
-
     try {
       const agents = await listAgents();
       setState({ type: 'loaded', agents });
@@ -42,77 +38,131 @@ export function AgentsPage() {
     }
   }
 
-  if (state.type === 'loading') {
-    return (
-      <div className="page agents-page">
-        <div className="loading">
-          <div className="spinner"></div>
-          <p>Loading your agents...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (state.type === 'error') {
-    return (
-      <div className="page agents-page">
-        <div className={`error-state ${state.isOffline ? 'offline' : ''}`}>
-          <h2>{state.isOffline ? 'Connection Error' : 'Error'}</h2>
-          <p>{state.message}</p>
-          <button onClick={loadAgents} className="btn btn-primary">
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const { agents } = state;
-
   return (
-    <div className="page agents-page">
-      <header className="page-header">
-        <h1>Your Agents</h1>
-        <p>Manage agents that have access to your accounts</p>
-      </header>
-
-      {agents.length === 0 ? (
-        <div className="empty-state">
-          <h2>No Agents Yet</h2>
-          <p>You haven't authorized any agents to act on your behalf.</p>
+    <div className="min-h-screen">
+      {/* Top bar */}
+      <div className="border-b border-border bg-panel">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2 text-text-secondary hover:text-amber transition-colors">
+            <div className="w-4 h-4 border border-current flex items-center justify-center">
+              <div className="w-1.5 h-1.5 bg-current" />
+            </div>
+            <span className="font-mono text-xs tracking-wide">AGENTAUTH</span>
+          </Link>
+          <span className="font-mono text-xs text-amber tracking-wide">AGENTS</span>
         </div>
-      ) : (
-        <ul className="agent-list">
-          {agents.map((agent) => (
-            <AgentCard key={agent.agent_id} agent={agent} />
-          ))}
-        </ul>
-      )}
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+        {state.type === 'loading' && (
+          <div className="animate-fade-in space-y-4">
+            <div className="skeleton h-6 w-36" />
+            <div className="skeleton h-4 w-64" />
+            <div className="mt-6 space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="skeleton h-24 w-full" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {state.type === 'error' && (
+          <div className="max-w-md mx-auto mt-16 animate-fade-in">
+            <div className={`border ${state.isOffline ? 'border-amber-dim bg-amber-glow' : 'border-red-dim bg-red-glow'} p-6`}>
+              <div className="flex items-start gap-3">
+                <div className={`w-2 h-2 mt-1.5 ${state.isOffline ? 'bg-amber' : 'bg-red'} animate-pulse`} />
+                <div>
+                  <h2 className="font-mono text-sm font-medium tracking-wide text-text-primary mb-2">
+                    {state.isOffline ? 'CONNECTION LOST' : 'ERROR'}
+                  </h2>
+                  <p className="text-text-secondary text-sm">{state.message}</p>
+                </div>
+              </div>
+              <button
+                onClick={loadAgents}
+                className="mt-5 w-full py-2.5 border border-border text-text-secondary font-mono text-xs tracking-wide hover:border-amber hover:text-amber transition-colors"
+              >
+                RETRY
+              </button>
+            </div>
+          </div>
+        )}
+
+        {state.type === 'loaded' && (
+          <div className="animate-fade-in">
+            {/* Header */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2 h-2 bg-amber" />
+                <h1 className="font-mono text-lg tracking-tight text-text-primary">AGENTS</h1>
+              </div>
+              <p className="text-text-muted text-sm pl-4">
+                {state.agents.length} registered agent{state.agents.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+
+            {state.agents.length === 0 ? (
+              <div className="border border-border bg-panel p-12 text-center">
+                <div className="w-3 h-3 bg-text-muted mx-auto mb-4" />
+                <p className="font-mono text-sm text-text-secondary mb-1">NO AGENTS REGISTERED</p>
+                <p className="text-text-muted text-sm">No agents have been authorized to act on your behalf.</p>
+              </div>
+            ) : (
+              <div className="space-y-2 stagger-children">
+                {state.agents.map((agent) => (
+                  <AgentRow key={agent.agent_id} agent={agent} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
-function AgentCard({ agent }: { agent: AgentSummary }) {
-  const statusClass = `status-${agent.status}`;
+function AgentRow({ agent }: { agent: AgentSummary }) {
+  const statusConfig = {
+    active: { color: 'bg-green', text: 'text-green', label: 'ACTIVE' },
+    suspended: { color: 'bg-amber', text: 'text-amber', label: 'SUSPENDED' },
+    revoked: { color: 'bg-red', text: 'text-red', label: 'REVOKED' },
+  };
+
+  const status = statusConfig[agent.status];
 
   return (
-    <li className="agent-card">
-      <div className="agent-info">
-        <h3>{agent.name}</h3>
-        <p className="agent-id">{agent.agent_id}</p>
-        <p className="registered-at">
-          Registered: {new Date(agent.registered_at).toLocaleDateString()}
-        </p>
+    <Link
+      to={`/agents/${agent.agent_id}/activity`}
+      className="block border border-border bg-panel hover:bg-panel-hover hover:border-border-bright transition-all group"
+    >
+      <div className="px-4 py-4 flex items-center gap-4">
+        {/* Status indicator */}
+        <div className={`w-2 h-2 ${status.color} shrink-0`} />
+
+        {/* Agent info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="text-sm font-medium text-text-primary group-hover:text-amber transition-colors truncate">
+              {agent.name}
+            </span>
+            <span className={`font-mono text-[10px] tracking-wide ${status.text}`}>
+              {status.label}
+            </span>
+          </div>
+          <div className="font-mono text-[11px] text-text-muted truncate">{agent.agent_id}</div>
+        </div>
+
+        {/* Grants count */}
+        <div className="text-right shrink-0">
+          <div className="font-mono text-sm text-text-primary">{agent.active_grants}</div>
+          <div className="font-mono text-[10px] text-text-muted">GRANTS</div>
+        </div>
+
+        {/* Arrow */}
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-text-muted group-hover:text-amber transition-colors shrink-0">
+          <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
       </div>
-      <div className="agent-meta">
-        <span className={`status-badge ${statusClass}`}>{agent.status}</span>
-        <span className="grant-count">{agent.active_grants} active grants</span>
-      </div>
-      <div className="agent-actions">
-        <Link to={`/agents/${agent.agent_id}/activity`} className="btn btn-secondary">
-          View Activity
-        </Link>
-      </div>
-    </li>
+    </Link>
   );
 }
