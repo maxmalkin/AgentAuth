@@ -2,7 +2,7 @@
 //!
 //! Verifies that replayed nonces within token lifetime are rejected.
 
-use agentauth_core::crypto::generate_nonce;
+use auth_core::crypto::generate_nonce;
 use std::collections::HashSet;
 
 /// COMPLIANCE: Generated nonces MUST be unique.

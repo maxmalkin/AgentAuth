@@ -19,7 +19,7 @@ mod state;
 use crate::config::VerifierConfig;
 use crate::handlers::{get_keys, liveness, metrics_handler, readiness, startup, verify_token};
 use crate::state::{HealthState, VerifierState};
-use agentauth_registry::services::CacheService;
+use registry::services::CacheService;
 use axum::{
     middleware,
     routing::{get, post},
@@ -61,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
     info!("Cache service (Redis) created successfully");
 
     // Create database pool for read replica fallback
-    let db = agentauth_registry::db::DbPool::new(&config.database)
+    let db = registry::db::DbPool::new(&config.database)
         .await
         .map_err(|e| {
             error!(error = %e, "Failed to create database pool");
@@ -102,13 +102,13 @@ async fn main() -> anyhow::Result<()> {
         .route("/health/startup", get(startup))
         .with_state(state.clone())
         .layer(middleware::from_fn(
-            agentauth_registry::middleware::logging_middleware,
+            registry::middleware::logging_middleware,
         ))
         .layer(middleware::from_fn(
-            agentauth_registry::middleware::request_id_middleware,
+            registry::middleware::request_id_middleware,
         ))
-        .layer(agentauth_registry::middleware::compression_layer())
-        .layer(agentauth_registry::middleware::cors_layer());
+        .layer(registry::middleware::compression_layer())
+        .layer(registry::middleware::cors_layer());
 
     // Create metrics router (separate port)
     let metrics_app = Router::new().route("/metrics", get(metrics_handler));

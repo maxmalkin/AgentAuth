@@ -1,8 +1,8 @@
 //! Verifier application state.
 
 use crate::config::VerifierConfig;
-use agentauth_registry::db::DbPool;
-use agentauth_registry::services::CacheService;
+use registry::db::DbPool;
+use registry::services::CacheService;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 

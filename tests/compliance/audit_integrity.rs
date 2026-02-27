@@ -3,8 +3,8 @@
 //! Verifies that the audit log hash chain maintains integrity
 //! and that service providers cannot forge events for others.
 
-use agentauth_core::crypto::{constant_time_eq, hash_chain_event, sha256};
-use agentauth_core::types::{AgentId, ServiceProviderId};
+use auth_core::crypto::{constant_time_eq, hash_chain_event, sha256};
+use auth_core::types::{AgentId, ServiceProviderId};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;

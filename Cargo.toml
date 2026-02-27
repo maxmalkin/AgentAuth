@@ -1,11 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/agentauth-core",
-    "crates/agentauth-registry",
-    "crates/agentauth-sdk",
-    "crates/agentauth-py",
-    "crates/agentauth-schema",
+    "crates/core",
+    "crates/registry",
+    "crates/sdk",
+    "crates/py",
+    "crates/schema",
     "services/registry",
     "services/verifier",
     "services/audit-archiver",

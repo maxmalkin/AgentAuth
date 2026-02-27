@@ -2,8 +2,8 @@
 //!
 //! Verifies that tampered tokens are always rejected.
 
-use agentauth_core::crypto::{constant_time_eq, sha256};
-use agentauth_core::types::{
+use auth_core::crypto::{constant_time_eq, sha256};
+use auth_core::types::{
     AgentAccessToken, AgentId, BehavioralEnvelope, Capability, HumanPrincipalId,
     ServiceProviderId, TokenId,
 };

@@ -2,8 +2,8 @@
 //!
 //! Verifies that agents exceeding their behavioral envelope are rate-limited.
 
-use agentauth_core::types::BehavioralEnvelope;
-use agentauth_sdk::rate_limiter::BehavioralRateLimiter;
+use auth_core::types::BehavioralEnvelope;
+use sdk::rate_limiter::BehavioralRateLimiter;
 
 fn create_restrictive_envelope() -> BehavioralEnvelope {
     BehavioralEnvelope {

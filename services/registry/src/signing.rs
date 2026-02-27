@@ -4,9 +4,9 @@
 //! In production, this should use KMS backends. For development, it uses
 //! HashiCorp Vault in dev mode.
 
-use agentauth_core::crypto::{Ed25519PublicKey, Signature, SigningBackend};
-use agentauth_core::error::CryptoError;
-use agentauth_registry::config::KmsBackend;
+use auth_core::crypto::{Ed25519PublicKey, Signature, SigningBackend};
+use auth_core::error::CryptoError;
+use registry::config::KmsBackend;
 use base64::Engine;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -15,7 +15,7 @@ use tracing::{info, warn};
 
 /// Create a signing backend based on configuration.
 pub async fn create_signing_backend(
-    config: &agentauth_registry::config::KmsConfig,
+    config: &registry::config::KmsConfig,
 ) -> Result<Arc<dyn SigningBackend>, anyhow::Error> {
     match &config.backend {
         KmsBackend::AwsKms { region: _ } => {

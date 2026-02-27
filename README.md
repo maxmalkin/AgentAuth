@@ -73,10 +73,10 @@ cargo nextest run --workspace
 
 ```bash
 # Start the registry service
-cargo run -p agentauth-registry-bin
+cargo run -p registry-bin
 
 # Start the verifier service (separate terminal)
-cargo run -p agentauth-verifier-bin
+cargo run -p verifier-bin
 
 # Start the approval UI (separate terminal)
 cd services/approval-ui
@@ -89,11 +89,11 @@ npm run dev
 ```
 agentauth/
 ├── crates/
-│   ├── agentauth-core/      # Protocol types, crypto (no I/O)
-│   ├── agentauth-registry/  # Registry service logic
-│   ├── agentauth-sdk/       # Rust agent SDK
-│   ├── agentauth-py/        # Python bindings (PyO3)
-│   └── agentauth-schema/    # JSON Schema validation
+│   ├── core/                # Protocol types, crypto (no I/O)
+│   ├── registry/            # Registry service logic
+│   ├── sdk/                 # Rust agent SDK
+│   ├── py/                  # Python bindings (PyO3)
+│   └── schema/              # JSON Schema validation
 ├── services/
 │   ├── registry/            # Registry binary
 │   ├── verifier/            # Verifier binary
@@ -116,7 +116,7 @@ agentauth/
 ### Rust
 
 ```rust
-use agentauth_sdk::{AgentAuthClient, AgentAuthConfig, Capability};
+use sdk::{AgentAuthClient, AgentAuthConfig, Capability};
 
 let config = AgentAuthConfig::new("https://registry.example.com")?;
 let client = AgentAuthClient::new(config)?;

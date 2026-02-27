@@ -1,5 +1,5 @@
 [package]
-name = "agentauth-audit-archiver-bin"
+name = "audit-archiver-bin"
 description = "AgentAuth Audit Archiver - async audit log compaction and cold storage"
 version.workspace = true
 edition.workspace = true
@@ -13,7 +13,7 @@ name = "audit-archiver"
 path = "src/main.rs"
 
 [dependencies]
-agentauth-core = { path = "../../crates/agentauth-core" }
+auth_core = { package = "core", path = "../../crates/core" }
 
 # Async runtime
 tokio = { workspace = true }

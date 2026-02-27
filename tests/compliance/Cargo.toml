@@ -9,8 +9,8 @@ name = "compliance"
 path = "main.rs"
 
 [dependencies]
-agentauth-core = { path = "../../crates/agentauth-core" }
-agentauth-sdk = { path = "../../crates/agentauth-sdk" }
+auth_core = { package = "core", path = "../../crates/core" }
+sdk = { path = "../../crates/sdk" }
 
 tokio = { version = "1.36", features = ["full", "test-util"] }
 chrono = { version = "0.4", features = ["serde"] }
