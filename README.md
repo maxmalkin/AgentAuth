@@ -44,15 +44,16 @@ AgentAuth enables AI agents to securely authenticate with third-party services w
 ### Prerequisites
 
 - Rust 1.85+
-- Node.js 20 LTS
+- Bun 1.0+
 - Python 3.11+
 - Docker & Docker Compose
+- cargo-nextest (`cargo install cargo-nextest`)
 
 ### Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/agentauth/agentauth.git
+git clone https://github.com/maxmalkin/AgentAuth.git
 cd agentauth
 
 # Start dependencies (PostgreSQL, Redis, etc.)
@@ -80,8 +81,8 @@ cargo run -p verifier-bin
 
 # Start the approval UI (separate terminal)
 cd services/approval-ui
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 ## Repository Structure
@@ -116,7 +117,7 @@ agentauth/
 ### Rust
 
 ```rust
-use sdk::{AgentAuthClient, AgentAuthConfig, Capability};
+use agentauth::{AgentAuthClient, AgentAuthConfig, Capability};
 
 let config = AgentAuthConfig::new("https://registry.example.com")?;
 let client = AgentAuthClient::new(config)?;
