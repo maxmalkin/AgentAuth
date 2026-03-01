@@ -1,5 +1,10 @@
 # AgentAuth
 
+[![CI](https://github.com/maxmalkin/AgentAuth/actions/workflows/ci.yml/badge.svg)](https://github.com/maxmalkin/AgentAuth/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![MSRV](https://img.shields.io/badge/MSRV-1.85-orange.svg)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/Rust-stable-brightgreen.svg)](https://www.rust-lang.org)
+
 A capability-based authentication system for AI agents.
 
 AgentAuth enables AI agents to securely authenticate with third-party services while giving humans fine-grained control over what actions agents can perform. It implements a delegated authorization model where humans approve specific capabilities for their agents, and service providers can verify these grants in real-time.
