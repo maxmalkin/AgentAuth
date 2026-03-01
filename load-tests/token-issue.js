@@ -1,13 +1,14 @@
 /**
  * Token Issuance Load Test
  *
- * Tests the registry service's token issuance endpoint.
+ * Tests POST /v1/tokens/issue on the registry service.
  *
  * Baseline targets (from CLAUDE.md):
- * - 500 req/s, p50 < 10ms, p99 < 50ms, p999 < 200ms, error rate < 0.1%
+ *   500 req/s, p50 < 10ms, p99 < 50ms, p999 < 200ms, error < 0.1%
  *
  * Usage:
- *   k6 run --vus 20 --duration 60s load-tests/token-issue.js
+ *   k6 run load-tests/token-issue.js
+ *   k6 run --vus 50 --duration 120s load-tests/token-issue.js
  */
 
 import http from 'k6/http';
@@ -15,15 +16,12 @@ import { check, sleep } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
 import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
 
-// Configuration
 const REGISTRY_URL = __ENV.REGISTRY_URL || 'http://localhost:8080';
 
-// Custom metrics
 const issueDuration = new Trend('issue_duration_ms', true);
 const issueErrors = new Counter('issue_errors');
 const issueSuccess = new Rate('issue_success_rate');
 
-// Test options
 export const options = {
   scenarios: {
     warmup: {
@@ -31,74 +29,88 @@ export const options = {
       vus: 5,
       duration: '10s',
       startTime: '0s',
-      tags: { scenario: 'warmup' },
+      tags: { phase: 'warmup' },
     },
     baseline: {
       executor: 'constant-vus',
       vus: 20,
       duration: '60s',
       startTime: '10s',
-      tags: { scenario: 'baseline' },
+      tags: { phase: 'baseline' },
+    },
+    sustained: {
+      executor: 'constant-vus',
+      vus: 50,
+      duration: '60s',
+      startTime: '70s',
+      tags: { phase: 'sustained' },
     },
   },
   thresholds: {
-    // Latency thresholds
-    'http_req_duration{scenario:baseline}': ['p(50)<50', 'p(99)<200', 'p(99.9)<500'],
-    // Error rate threshold
+    'http_req_duration{phase:baseline}': ['p(50)<50', 'p(99)<200', 'p(99.9)<500'],
     'issue_success_rate': ['rate>0.999'],
   },
 };
 
-// Pre-generated test data
-const testAgents = [];
-for (let i = 0; i < 10; i++) {
-  testAgents.push({
+// Pre-generate agents with approved grants to issue tokens against.
+const AGENT_POOL_SIZE = 20;
+const agentPool = [];
+for (let i = 0; i < AGENT_POOL_SIZE; i++) {
+  agentPool.push({
     agent_id: uuidv4(),
     grant_id: uuidv4(),
     service_provider_id: uuidv4(),
+    human_principal_id: uuidv4(),
   });
 }
 
 export default function () {
-  // Pick a random agent
-  const agent = testAgents[Math.floor(Math.random() * testAgents.length)];
+  const agent = agentPool[Math.floor(Math.random() * agentPool.length)];
 
   const payload = JSON.stringify({
     grant_id: agent.grant_id,
-    idempotency_key: uuidv4(), // Unique per request for testing
+    agent_id: agent.agent_id,
+    service_provider_id: agent.service_provider_id,
+    human_principal_id: agent.human_principal_id,
+    capabilities: [
+      { Read: { resource: 'calendar', filter: null } },
+    ],
+    behavioral_envelope: {
+      max_requests_per_minute: 60,
+      max_burst: 10,
+      requires_human_online: false,
+      human_confirmation_threshold: null,
+      allowed_time_windows: [],
+      max_session_duration_secs: 3600,
+    },
+    token_binding: null,
   });
 
   const params = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    tags: {
-      endpoint: 'issue',
-    },
+    headers: { 'Content-Type': 'application/json' },
+    tags: { endpoint: 'issue' },
   };
 
-  const startTime = Date.now();
-  const response = http.post(`${REGISTRY_URL}/v1/tokens/issue`, payload, params);
-  const duration = Date.now() - startTime;
+  const start = Date.now();
+  const res = http.post(`${REGISTRY_URL}/v1/tokens/issue`, payload, params);
+  const duration = Date.now() - start;
 
-  // Record custom metrics
   issueDuration.add(duration);
 
-  // Check response (401/403 expected without auth, but we test the path works)
-  const success = check(response, {
-    'status is 200 or 401/403': (r) => [200, 401, 403, 400].includes(r.status),
-    'response time < 200ms': (r) => r.timings.duration < 200,
+  // 201 = issued, 200 = idempotent hit, 400/401/403 = expected without auth setup
+  const ok = check(res, {
+    'status is acceptable': (r) => [200, 201, 400, 401, 403].includes(r.status),
+    'latency < 200ms': (r) => r.timings.duration < 200,
   });
 
-  if (success) {
+  if (ok) {
     issueSuccess.add(1);
   } else {
     issueErrors.add(1);
     issueSuccess.add(0);
   }
 
-  // Slightly longer sleep for write operations
-  sleep(0.05);
+  sleep(0.02);
 }
 
 export function handleSummary(data) {
@@ -109,16 +121,16 @@ export function handleSummary(data) {
   const rps = data.metrics.http_reqs.values.rate;
 
   console.log('\n=== Token Issue Load Test Results ===');
-  console.log(`Requests/sec: ${rps.toFixed(2)}`);
-  console.log(`p50 latency: ${p50.toFixed(2)}ms`);
-  console.log(`p99 latency: ${p99.toFixed(2)}ms`);
-  console.log(`p99.9 latency: ${p999.toFixed(2)}ms`);
-  console.log(`Error rate: ${(errorRate * 100).toFixed(4)}%`);
+  console.log(`Throughput:    ${rps.toFixed(0)} req/s`);
+  console.log(`p50 latency:  ${p50.toFixed(2)}ms`);
+  console.log(`p99 latency:  ${p99.toFixed(2)}ms`);
+  console.log(`p999 latency: ${p999.toFixed(2)}ms`);
+  console.log(`Error rate:   ${(errorRate * 100).toFixed(4)}%`);
   console.log('\nBaseline targets:');
-  console.log('  500 req/s, p50 < 10ms, p99 < 50ms, p999 < 200ms, error < 0.1%');
+  console.log('  500 req/s | p50 < 10ms | p99 < 50ms | p999 < 200ms | error < 0.1%');
   console.log('=====================================\n');
 
   return {
-    'load-tests/results/token-issue-summary.json': JSON.stringify(data, null, 2),
+    'load-tests/results/token-issue.json': JSON.stringify(data, null, 2),
   };
 }
