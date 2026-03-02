@@ -32,10 +32,8 @@ async fn test_audit_written_on_registration() {
     assert_status(&resp, StatusCode::OK);
     let body = parse_json(resp).await;
 
-    // Should contain at least one agent_registered event
-    let events = body["events"]
-        .as_array()
-        .expect("events should be an array");
+    // Response is a flat array of audit events
+    let events = body.as_array().expect("response should be a JSON array");
     let has_registration = events.iter().any(|e| e["event_type"] == "agent_registered");
     assert!(
         has_registration,
@@ -58,7 +56,8 @@ async fn test_audit_written_on_grant_lifecycle() {
         .header("content-type", "application/json")
         .body(Body::from(serde_json::to_vec(&register_body).unwrap()))
         .unwrap();
-    let _ = app.registry_request(req).await;
+    let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::CREATED);
 
     // Request grant
     let grant_body = factories::create_grant_request(agent_id, sp_id);
@@ -69,6 +68,7 @@ async fn test_audit_written_on_grant_lifecycle() {
         .body(Body::from(serde_json::to_vec(&grant_body).unwrap()))
         .unwrap();
     let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::CREATED);
     let body = parse_json(resp).await;
     let grant_id: uuid::Uuid = serde_json::from_value(body["id"].clone()).unwrap();
 
@@ -80,7 +80,8 @@ async fn test_audit_written_on_grant_lifecycle() {
         .header("content-type", "application/json")
         .body(Body::from(serde_json::to_vec(&approve_body).unwrap()))
         .unwrap();
-    let _ = app.registry_request(req).await;
+    let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::OK);
 
     // Issue token
     let issue_body = factories::create_issue_request(grant_id, agent_id, sp_id, hp_id);
@@ -90,7 +91,8 @@ async fn test_audit_written_on_grant_lifecycle() {
         .header("content-type", "application/json")
         .body(Body::from(serde_json::to_vec(&issue_body).unwrap()))
         .unwrap();
-    let _ = app.registry_request(req).await;
+    let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::CREATED);
 
     // Check audit log for all expected events
     let req = Request::builder()
@@ -102,9 +104,7 @@ async fn test_audit_written_on_grant_lifecycle() {
     assert_status(&resp, StatusCode::OK);
     let body = parse_json(resp).await;
 
-    let events = body["events"]
-        .as_array()
-        .expect("events should be an array");
+    let events = body.as_array().expect("response should be a JSON array");
     let event_types: Vec<&str> = events
         .iter()
         .filter_map(|e| e["event_type"].as_str())
@@ -143,7 +143,8 @@ async fn test_audit_written_on_denial() {
         .header("content-type", "application/json")
         .body(Body::from(serde_json::to_vec(&register_body).unwrap()))
         .unwrap();
-    let _ = app.registry_request(req).await;
+    let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::CREATED);
 
     // Request grant
     let grant_body = factories::create_grant_request(agent_id, sp_id);
@@ -154,6 +155,7 @@ async fn test_audit_written_on_denial() {
         .body(Body::from(serde_json::to_vec(&grant_body).unwrap()))
         .unwrap();
     let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::CREATED);
     let body = parse_json(resp).await;
     let grant_id: uuid::Uuid = serde_json::from_value(body["id"].clone()).unwrap();
 
@@ -164,7 +166,8 @@ async fn test_audit_written_on_denial() {
         .header("content-type", "application/json")
         .body(Body::from("{}"))
         .unwrap();
-    let _ = app.registry_request(req).await;
+    let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::OK);
 
     // Check audit
     let req = Request::builder()
@@ -173,11 +176,10 @@ async fn test_audit_written_on_denial() {
         .body(Body::empty())
         .unwrap();
     let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::OK);
     let body = parse_json(resp).await;
 
-    let events = body["events"]
-        .as_array()
-        .expect("events should be an array");
+    let events = body.as_array().expect("response should be a JSON array");
     let has_denial = events.iter().any(|e| e["event_type"] == "grant_denied");
     assert!(has_denial, "audit log should contain grant_denied event");
 }
