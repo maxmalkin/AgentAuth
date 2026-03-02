@@ -201,4 +201,4 @@ Target performance characteristics:
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License 
