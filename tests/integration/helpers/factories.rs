@@ -63,7 +63,7 @@ pub fn create_grant_request(agent_id: Uuid, sp_id: Uuid) -> serde_json::Value {
         "agent_id": agent_id,
         "service_provider_id": sp_id,
         "capabilities": [
-            { "Read": { "resource": "calendar", "filter": null } }
+            { "type": "read", "resource": "calendar" }
         ],
         "behavioral_envelope": default_envelope_json(),
     })
@@ -95,7 +95,7 @@ pub fn create_issue_request(
         "service_provider_id": sp_id,
         "human_principal_id": hp_id,
         "capabilities": [
-            { "Read": { "resource": "calendar", "filter": null } }
+            { "type": "read", "resource": "calendar" }
         ],
         "behavioral_envelope": default_envelope_json(),
     })

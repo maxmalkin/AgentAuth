@@ -119,7 +119,7 @@ async fn test_postgres_recovery_within_60s() {
             "id": uuid::Uuid::now_v7(),
             "public_key": "dGVzdA",
             "key_id": "test",
-            "capabilities_requested": [{ "Read": { "resource": "test", "filter": null } }],
+            "capabilities_requested": [{ "type": "read", "resource": "test" }],
             "human_principal_id": uuid::Uuid::now_v7(),
             "issued_at": chrono::Utc::now(),
             "expires_at": chrono::Utc::now() + chrono::Duration::hours(1),

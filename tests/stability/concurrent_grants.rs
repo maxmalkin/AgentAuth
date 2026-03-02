@@ -37,7 +37,7 @@ async fn test_1000_concurrent_grant_requests() {
                 "agent_id": agent_id,
                 "service_provider_id": sp_id,
                 "capabilities": [
-                    { "Read": { "resource": format!("resource-{i}"), "filter": null } }
+                    { "type": "read", "resource": format!("resource-{i}") }
                 ],
                 "behavioral_envelope": {
                     "max_requests_per_minute": 30,
