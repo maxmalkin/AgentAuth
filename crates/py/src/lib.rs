@@ -410,7 +410,10 @@ impl PyAgentAuthClient {
             // Convert headers to a HashMap to return to Python
             let mut result: HashMap<String, String> = HashMap::new();
             for (key, value) in &headers {
-                result.insert(key.as_str().to_string(), value.to_str().unwrap_or("").to_string());
+                result.insert(
+                    key.as_str().to_string(),
+                    value.to_str().unwrap_or("").to_string(),
+                );
             }
             Ok(result)
         })

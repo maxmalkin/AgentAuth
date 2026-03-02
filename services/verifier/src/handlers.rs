@@ -2,9 +2,9 @@
 
 use crate::state::VerifierState;
 use auth_core::TokenId;
-use registry::db;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use chrono::Utc;
+use registry::db;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tracing::{info, warn};

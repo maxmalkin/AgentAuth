@@ -159,10 +159,7 @@ fn test_zero_session_duration_rejected() {
 fn test_valid_envelope_accepted() {
     let valid = BehavioralEnvelope::default_restrictive();
 
-    assert!(
-        valid.validate().is_ok(),
-        "valid envelope MUST be accepted"
-    );
+    assert!(valid.validate().is_ok(), "valid envelope MUST be accepted");
 }
 
 /// COMPLIANCE: Envelope with requires_human_online MUST block when human offline.

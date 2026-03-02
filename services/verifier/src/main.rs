@@ -19,12 +19,12 @@ mod state;
 use crate::config::VerifierConfig;
 use crate::handlers::{get_keys, liveness, metrics_handler, readiness, startup, verify_token};
 use crate::state::{HealthState, VerifierState};
-use registry::services::CacheService;
 use axum::{
     middleware,
     routing::{get, post},
     Router,
 };
+use registry::services::CacheService;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;

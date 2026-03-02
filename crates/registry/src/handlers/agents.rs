@@ -152,9 +152,7 @@ pub async fn bootstrap_agent(
     // Sign the manifest using the registry's signing backend
     let signature = state
         .signer
-        .sign(&auth_core::crypto::manifest_signing_bytes(
-            &req.manifest,
-        ))
+        .sign(&auth_core::crypto::manifest_signing_bytes(&req.manifest))
         .await
         .map_err(|e| RegistryError::Internal(format!("failed to sign manifest: {e}")))?;
 

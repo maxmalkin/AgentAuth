@@ -107,7 +107,11 @@ fn test_proof_with_access_token_binding() {
     let access_token = "eyJhbGciOiJFZDI1NTE5IiwidHlwIjoiSldUIn0.test.signature";
 
     let proof_with_token = generator
-        .generate("POST", "https://api.example.com/resource", Some(access_token))
+        .generate(
+            "POST",
+            "https://api.example.com/resource",
+            Some(access_token),
+        )
         .expect("create proof with ath");
 
     let proof_without_token = generator

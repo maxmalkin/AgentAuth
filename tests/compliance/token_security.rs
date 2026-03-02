@@ -4,8 +4,8 @@
 
 use auth_core::crypto::{constant_time_eq, sha256};
 use auth_core::types::{
-    AgentAccessToken, AgentId, BehavioralEnvelope, Capability, HumanPrincipalId,
-    ServiceProviderId, TokenId,
+    AgentAccessToken, AgentId, BehavioralEnvelope, Capability, HumanPrincipalId, ServiceProviderId,
+    TokenId,
 };
 use chrono::Utc;
 
@@ -119,10 +119,7 @@ fn test_token_canonical_bytes_deterministic() {
     let bytes1 = token.to_canonical_bytes().expect("serialize 1");
     let bytes2 = token.to_canonical_bytes().expect("serialize 2");
 
-    assert_eq!(
-        bytes1, bytes2,
-        "canonical bytes MUST be deterministic"
-    );
+    assert_eq!(bytes1, bytes2, "canonical bytes MUST be deterministic");
 }
 
 /// COMPLIANCE: Token hash changes when any claim is modified.
@@ -144,14 +141,20 @@ fn test_token_hash_changes_with_any_modification() {
     token3.granted_capabilities = vec![];
     let bytes3 = token3.to_canonical_bytes().expect("serialize");
     let hash3 = sha256(&bytes3);
-    assert_ne!(hash1, hash3, "changed capabilities MUST produce different hash");
+    assert_ne!(
+        hash1, hash3,
+        "changed capabilities MUST produce different hash"
+    );
 
     // Test service_provider_id change
     let mut token4 = token1.clone();
     token4.service_provider_id = ServiceProviderId::new();
     let bytes4 = token4.to_canonical_bytes().expect("serialize");
     let hash4 = sha256(&bytes4);
-    assert_ne!(hash1, hash4, "changed service_provider_id MUST produce different hash");
+    assert_ne!(
+        hash1, hash4,
+        "changed service_provider_id MUST produce different hash"
+    );
 }
 
 /// COMPLIANCE: Constant-time comparison is used for hashes.
@@ -184,10 +187,7 @@ fn test_expired_token_rejected() {
     token.issued_at = now - chrono::Duration::hours(1);
     token.expires_at = now - chrono::Duration::minutes(1);
 
-    assert!(
-        token.validate().is_err(),
-        "expired token MUST be rejected"
-    );
+    assert!(token.validate().is_err(), "expired token MUST be rejected");
 }
 
 /// COMPLIANCE: Token validation rejects tokens with empty capabilities.
@@ -207,10 +207,7 @@ fn test_empty_capabilities_rejected() {
 fn test_valid_token_accepted() {
     let token = create_valid_token();
 
-    assert!(
-        token.validate().is_ok(),
-        "valid token MUST be accepted"
-    );
+    assert!(token.validate().is_ok(), "valid token MUST be accepted");
 }
 
 /// COMPLIANCE: Token JTI (jti) MUST be unique.
@@ -219,8 +216,5 @@ fn test_token_jti_unique() {
     let token1 = create_valid_token();
     let token2 = create_valid_token();
 
-    assert_ne!(
-        token1.jti, token2.jti,
-        "each token MUST have a unique JTI"
-    );
+    assert_ne!(token1.jti, token2.jti, "each token MUST have a unique JTI");
 }

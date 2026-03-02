@@ -8,9 +8,9 @@
 //! - Capability boundaries are enforced
 //! - Audit log integrity is maintained
 
-mod token_security;
+mod audit_integrity;
 mod behavioral_envelope;
+mod capability_boundary;
 mod dpop_binding;
 mod nonce_replay;
-mod capability_boundary;
-mod audit_integrity;
+mod token_security;

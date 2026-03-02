@@ -31,7 +31,13 @@ impl AuditEvent {
         let event_id = Uuid::now_v7();
         let timestamp = Utc::now();
 
-        let content = Self::content_bytes(&event_id, &service_provider_id, &agent_id, action, &timestamp);
+        let content = Self::content_bytes(
+            &event_id,
+            &service_provider_id,
+            &agent_id,
+            action,
+            &timestamp,
+        );
         let row_hash = hash_chain_event(&previous_hash, &content);
 
         Self {
@@ -184,10 +190,7 @@ fn test_tampered_row_hash_detected() {
     // Tamper with the row hash
     chain.events[0].row_hash[0] ^= 0xFF;
 
-    assert!(
-        !chain.verify_chain(),
-        "tampered row_hash MUST be detected"
-    );
+    assert!(!chain.verify_chain(), "tampered row_hash MUST be detected");
 }
 
 /// COMPLIANCE: Inserted event MUST break the chain.
@@ -213,10 +216,7 @@ fn test_inserted_event_breaks_chain() {
 
     chain.events.insert(1, fake_event);
 
-    assert!(
-        !chain.verify_chain(),
-        "inserted event MUST break the chain"
-    );
+    assert!(!chain.verify_chain(), "inserted event MUST break the chain");
 }
 
 /// COMPLIANCE: Deleted event MUST break the chain.
@@ -233,10 +233,7 @@ fn test_deleted_event_breaks_chain() {
     // Remove the middle event
     chain.events.remove(1);
 
-    assert!(
-        !chain.verify_chain(),
-        "deleted event MUST break the chain"
-    );
+    assert!(!chain.verify_chain(), "deleted event MUST break the chain");
 }
 
 /// COMPLIANCE: Reordered events MUST break the chain.
@@ -404,10 +401,7 @@ fn test_hash_chain_deterministic() {
     let hash1 = hash_chain_event(&previous, content);
     let hash2 = hash_chain_event(&previous, content);
 
-    assert_eq!(
-        hash1, hash2,
-        "hash_chain_event MUST be deterministic"
-    );
+    assert_eq!(hash1, hash2, "hash_chain_event MUST be deterministic");
 }
 
 /// COMPLIANCE: Constant time comparison is used for hashes.
@@ -431,10 +425,7 @@ fn test_constant_time_eq_for_hashes() {
 #[test]
 fn test_empty_chain_valid() {
     let chain = AuditChain::new();
-    assert!(
-        chain.verify_chain(),
-        "empty audit chain MUST be valid"
-    );
+    assert!(chain.verify_chain(), "empty audit chain MUST be valid");
 }
 
 /// COMPLIANCE: Single event chain is valid.
@@ -446,8 +437,5 @@ fn test_single_event_chain_valid() {
 
     chain.append(sp_id, agent_id, "single_event");
 
-    assert!(
-        chain.verify_chain(),
-        "single event chain MUST be valid"
-    );
+    assert!(chain.verify_chain(), "single event chain MUST be valid");
 }

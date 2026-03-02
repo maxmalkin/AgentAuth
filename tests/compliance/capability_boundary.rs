@@ -3,8 +3,8 @@
 //! Verifies that agents cannot request or use capabilities beyond their manifest.
 
 use auth_core::types::{
-    AgentAccessToken, AgentId, AgentManifest, BehavioralEnvelope, Capability,
-    HumanPrincipalId, ServiceProviderId, TokenId,
+    AgentAccessToken, AgentId, AgentManifest, BehavioralEnvelope, Capability, HumanPrincipalId,
+    ServiceProviderId, TokenId,
 };
 use chrono::Utc;
 use std::collections::HashMap;
@@ -42,34 +42,28 @@ fn create_test_token(capabilities: Vec<Capability>) -> AgentAccessToken {
 }
 
 /// Checks if requested capabilities are a subset of manifest capabilities.
-fn capabilities_within_manifest(
-    requested: &[Capability],
-    manifest: &AgentManifest,
-) -> bool {
+fn capabilities_within_manifest(requested: &[Capability], manifest: &AgentManifest) -> bool {
     requested.iter().all(|req| {
-        manifest.capabilities_requested.iter().any(|m| {
-            req.capability_type() == m.capability_type() && req.resource() == m.resource()
-        })
+        manifest
+            .capabilities_requested
+            .iter()
+            .any(|m| req.capability_type() == m.capability_type() && req.resource() == m.resource())
     })
 }
 
 /// COMPLIANCE: Agent cannot request capabilities beyond manifest.
 #[test]
 fn test_cannot_request_beyond_manifest() {
-    let manifest = create_test_manifest(vec![
-        Capability::Read {
-            resource: "calendar".to_string(),
-            filter: None,
-        },
-    ]);
+    let manifest = create_test_manifest(vec![Capability::Read {
+        resource: "calendar".to_string(),
+        filter: None,
+    }]);
 
     // Try to request write capability (not in manifest)
-    let requested = vec![
-        Capability::Write {
-            resource: "calendar".to_string(),
-            conditions: None,
-        },
-    ];
+    let requested = vec![Capability::Write {
+        resource: "calendar".to_string(),
+        conditions: None,
+    }];
 
     assert!(
         !capabilities_within_manifest(&requested, &manifest),
@@ -92,12 +86,10 @@ fn test_can_request_within_manifest() {
     ]);
 
     // Request only read (subset of manifest)
-    let requested = vec![
-        Capability::Read {
-            resource: "calendar".to_string(),
-            filter: None,
-        },
-    ];
+    let requested = vec![Capability::Read {
+        resource: "calendar".to_string(),
+        filter: None,
+    }];
 
     assert!(
         capabilities_within_manifest(&requested, &manifest),
@@ -108,20 +100,16 @@ fn test_can_request_within_manifest() {
 /// COMPLIANCE: Agent cannot request capabilities for different resource.
 #[test]
 fn test_cannot_request_different_resource() {
-    let manifest = create_test_manifest(vec![
-        Capability::Read {
-            resource: "calendar".to_string(),
-            filter: None,
-        },
-    ]);
+    let manifest = create_test_manifest(vec![Capability::Read {
+        resource: "calendar".to_string(),
+        filter: None,
+    }]);
 
     // Try to request same capability type but different resource
-    let requested = vec![
-        Capability::Read {
-            resource: "email".to_string(),
-            filter: None,
-        },
-    ];
+    let requested = vec![Capability::Read {
+        resource: "email".to_string(),
+        filter: None,
+    }];
 
     assert!(
         !capabilities_within_manifest(&requested, &manifest),

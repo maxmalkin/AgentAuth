@@ -6,8 +6,8 @@
 
 use auth_core::crypto::{Ed25519PublicKey, Signature, SigningBackend};
 use auth_core::error::CryptoError;
-use registry::config::KmsBackend;
 use base64::Engine;
+use registry::config::KmsBackend;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

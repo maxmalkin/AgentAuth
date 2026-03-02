@@ -13,10 +13,7 @@ fn test_nonce_uniqueness() {
     // Generate 10,000 nonces and verify all are unique
     for _ in 0..10_000 {
         let nonce = generate_nonce();
-        assert!(
-            nonces.insert(nonce),
-            "generated nonces MUST be unique"
-        );
+        assert!(nonces.insert(nonce), "generated nonces MUST be unique");
     }
 }
 
@@ -24,11 +21,7 @@ fn test_nonce_uniqueness() {
 #[test]
 fn test_nonce_length() {
     let nonce = generate_nonce();
-    assert_eq!(
-        nonce.len(),
-        32,
-        "nonce MUST be exactly 32 bytes"
-    );
+    assert_eq!(nonce.len(), 32, "nonce MUST be exactly 32 bytes");
 }
 
 /// COMPLIANCE: Nonces MUST have sufficient entropy.
@@ -38,17 +31,11 @@ fn test_nonce_entropy() {
 
     // Check that the nonce is not all zeros
     let all_zeros = nonce.iter().all(|&b| b == 0);
-    assert!(
-        !all_zeros,
-        "nonce MUST have entropy (not all zeros)"
-    );
+    assert!(!all_zeros, "nonce MUST have entropy (not all zeros)");
 
     // Check that the nonce is not all ones
     let all_ones = nonce.iter().all(|&b| b == 0xFF);
-    assert!(
-        !all_ones,
-        "nonce MUST have entropy (not all ones)"
-    );
+    assert!(!all_ones, "nonce MUST have entropy (not all ones)");
 
     // Check that we have reasonable byte diversity
     let unique_bytes: HashSet<u8> = nonce.iter().copied().collect();
@@ -101,10 +88,7 @@ fn test_nonce_replay_detection() {
         "replayed nonce MUST be detected"
     );
 
-    assert!(
-        store.is_used(&nonce),
-        "used nonce MUST be tracked"
-    );
+    assert!(store.is_used(&nonce), "used nonce MUST be tracked");
 }
 
 /// COMPLIANCE: Different nonces MUST be allowed.

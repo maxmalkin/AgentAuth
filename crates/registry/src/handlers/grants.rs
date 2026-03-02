@@ -3,9 +3,7 @@
 use crate::error::{RegistryError, Result};
 use crate::services::{AuditEvent, AuditEventType};
 use crate::state::AppState;
-use auth_core::{
-    AgentId, BehavioralEnvelope, Capability, CapabilityGrant, GrantId, GrantStatus,
-};
+use auth_core::{AgentId, BehavioralEnvelope, Capability, CapabilityGrant, GrantId, GrantStatus};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
