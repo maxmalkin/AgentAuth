@@ -206,21 +206,6 @@ pub async fn drop_partition(pool: &PgPool, name: &str) -> Result<()> {
     Ok(())
 }
 
-/// Counts the number of rows in a partition.
-///
-/// # Errors
-///
-/// Returns an error if the partition name is invalid or the query fails.
-#[allow(dead_code)] // Utility for diagnostics and future use
-pub async fn count_rows(pool: &PgPool, name: &str) -> Result<i64> {
-    validate_partition_name(name)?;
-
-    // DDL: partition name is validated against strict format above.
-    let sql = format!("SELECT COUNT(*) FROM {name}");
-    let row: (i64,) = sqlx::query_as(&sql).fetch_one(pool).await?;
-    Ok(row.0)
-}
-
 /// Determines which partitions need to be created based on the current date
 /// and the advance window.
 #[must_use]
