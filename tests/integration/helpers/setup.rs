@@ -478,12 +478,11 @@ fn build_verifier_router(db: DbPool, cache: Arc<CacheService>, _config: Registry
 /// Seed a human principal into the database for test use.
 pub async fn seed_human_principal(pool: &PgPool, id: uuid::Uuid) {
     sqlx::query(
-        "INSERT INTO human_principals (id, display_name, email) \
-         VALUES ($1, $2, $3) \
+        "INSERT INTO human_principals (id, email) \
+         VALUES ($1, $2) \
          ON CONFLICT (id) DO NOTHING",
     )
     .bind(id)
-    .bind("Test Human")
     .bind(format!("test-{}@example.com", id))
     .execute(pool)
     .await
@@ -493,13 +492,14 @@ pub async fn seed_human_principal(pool: &PgPool, id: uuid::Uuid) {
 /// Seed a service provider into the database for test use.
 pub async fn seed_service_provider(pool: &PgPool, id: uuid::Uuid) {
     sqlx::query(
-        "INSERT INTO service_providers (id, name, domain) \
-         VALUES ($1, $2, $3) \
+        "INSERT INTO service_providers (id, name, verification_endpoint, public_key) \
+         VALUES ($1, $2, $3, $4) \
          ON CONFLICT (id) DO NOTHING",
     )
     .bind(id)
-    .bind("Test Service Provider")
-    .bind(format!("sp-{}.example.com", id))
+    .bind(format!("Test SP {}", id))
+    .bind(format!("https://sp-{}.example.com/verify", id))
+    .bind(vec![0u8; 32]) // Placeholder public key
     .execute(pool)
     .await
     .expect("failed to seed service provider");
