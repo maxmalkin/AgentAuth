@@ -111,6 +111,8 @@ impl TestApp {
 
         // Ensure audit_events partition exists for the current month.
         // The base migration only creates 2025-01 and 2025-02 partitions.
+        // Multiple test processes may race to create the same partition, so
+        // we ignore the 42P07 (duplicate_table) error.
         let now = chrono::Utc::now();
         let partition_name = format!("audit_events_{}_{:02}", now.format("%Y"), now.format("%m"));
         let next_month = now + chrono::Duration::days(32);
@@ -121,13 +123,16 @@ impl TestApp {
             next_month.format("%m")
         );
         let create_partition = format!(
-            "CREATE TABLE IF NOT EXISTS {partition_name} PARTITION OF audit_events \
+            "CREATE TABLE {partition_name} PARTITION OF audit_events \
              FOR VALUES FROM ('{start}') TO ('{end}')"
         );
-        sqlx::query(&create_partition)
-            .execute(&db_pool)
-            .await
-            .expect("failed to create audit partition for current month");
+        match sqlx::query(&create_partition).execute(&db_pool).await {
+            Ok(_) => {}
+            Err(sqlx::Error::Database(e)) if e.code().as_deref() == Some("42P07") => {
+                // Partition already exists (concurrent test or previous run) — safe to ignore.
+            }
+            Err(e) => panic!("failed to create audit partition for current month: {e}"),
+        }
 
         // Build registry config with test defaults
         let config = RegistryConfig {
