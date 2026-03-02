@@ -134,8 +134,6 @@ fn default_envelope_json() -> serde_json::Value {
         "max_requests_per_minute": 30,
         "max_burst": 5,
         "requires_human_online": false,
-        "human_confirmation_threshold": null,
-        "allowed_time_windows": null,
         "max_session_duration_secs": 3600
     })
 }
