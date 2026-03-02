@@ -77,6 +77,16 @@ cargo nextest run --workspace
 
 ### Running the Services
 
+The easiest way to run all services locally is with the dev runner script:
+
+```bash
+./dev.sh
+```
+
+This starts the registry, verifier, and approval UI in a single terminal with colored log output. Press Ctrl+C to stop all services.
+
+To run services individually:
+
 ```bash
 # Start the registry service
 cargo run -p registry-bin
