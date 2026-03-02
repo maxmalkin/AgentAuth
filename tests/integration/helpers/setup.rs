@@ -109,6 +109,26 @@ impl TestApp {
             .await
             .expect("failed to run migrations");
 
+        // Ensure audit_events partition exists for the current month.
+        // The base migration only creates 2025-01 and 2025-02 partitions.
+        let now = chrono::Utc::now();
+        let partition_name = format!("audit_events_{}_{:02}", now.format("%Y"), now.format("%m"));
+        let next_month = now + chrono::Duration::days(32);
+        let start = format!("{}-{:02}-01", now.format("%Y"), now.format("%m"));
+        let end = format!(
+            "{}-{:02}-01",
+            next_month.format("%Y"),
+            next_month.format("%m")
+        );
+        let create_partition = format!(
+            "CREATE TABLE IF NOT EXISTS {partition_name} PARTITION OF audit_events \
+             FOR VALUES FROM ('{start}') TO ('{end}')"
+        );
+        sqlx::query(&create_partition)
+            .execute(&db_pool)
+            .await
+            .expect("failed to create audit partition for current month");
+
         // Build registry config with test defaults
         let config = RegistryConfig {
             server: ServerConfig {
