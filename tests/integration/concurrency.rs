@@ -1,10 +1,11 @@
 //! Concurrency and race condition tests.
 
-use crate::helpers::assertions::parse_json;
+use crate::helpers::assertions::{assert_status, parse_json};
 use crate::helpers::factories;
 use crate::helpers::setup::{
     seed_human_principal, seed_service_provider, Body, BodyExt, Request, ServiceExt, TestApp,
 };
+use hyper::StatusCode;
 
 /// Helper: full flow through token issuance.
 async fn issue_test_token(app: &TestApp) -> (uuid::Uuid, uuid::Uuid, uuid::Uuid) {
@@ -18,7 +19,8 @@ async fn issue_test_token(app: &TestApp) -> (uuid::Uuid, uuid::Uuid, uuid::Uuid)
         .header("content-type", "application/json")
         .body(Body::from(serde_json::to_vec(&register_body).unwrap()))
         .unwrap();
-    let _ = app.registry_request(req).await;
+    let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::CREATED);
 
     let grant_body = factories::create_grant_request(agent_id, sp_id);
     let req = Request::builder()
@@ -28,6 +30,7 @@ async fn issue_test_token(app: &TestApp) -> (uuid::Uuid, uuid::Uuid, uuid::Uuid)
         .body(Body::from(serde_json::to_vec(&grant_body).unwrap()))
         .unwrap();
     let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::CREATED);
     let body = parse_json(resp).await;
     let grant_id: uuid::Uuid = serde_json::from_value(body["id"].clone()).unwrap();
 
@@ -38,7 +41,8 @@ async fn issue_test_token(app: &TestApp) -> (uuid::Uuid, uuid::Uuid, uuid::Uuid)
         .header("content-type", "application/json")
         .body(Body::from(serde_json::to_vec(&approve_body).unwrap()))
         .unwrap();
-    let _ = app.registry_request(req).await;
+    let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::OK);
 
     let issue_body = factories::create_issue_request(grant_id, agent_id, sp_id, hp_id);
     let req = Request::builder()
@@ -48,6 +52,7 @@ async fn issue_test_token(app: &TestApp) -> (uuid::Uuid, uuid::Uuid, uuid::Uuid)
         .body(Body::from(serde_json::to_vec(&issue_body).unwrap()))
         .unwrap();
     let resp = app.registry_request(req).await;
+    assert_status(&resp, StatusCode::CREATED);
     let body = parse_json(resp).await;
     let jti: uuid::Uuid = serde_json::from_value(body["jti"].clone()).unwrap();
 
