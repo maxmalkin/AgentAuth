@@ -24,11 +24,14 @@ pub fn assert_status(response: &axum::response::Response<Body>, expected: Status
 ///
 /// Panics if the body cannot be read or parsed as JSON.
 pub async fn parse_json(response: axum::response::Response<Body>) -> serde_json::Value {
+    let status = response.status();
     let body = response.into_body();
     let bytes = body
         .collect()
         .await
         .expect("failed to read response body")
         .to_bytes();
-    serde_json::from_slice(&bytes).expect("failed to parse response JSON")
+    let text = String::from_utf8_lossy(&bytes);
+    serde_json::from_slice(&bytes)
+        .unwrap_or_else(|e| panic!("failed to parse response JSON (status={status}): {e}\nbody: {text}"))
 }
