@@ -33,14 +33,37 @@ chrono = { workspace = true }
 
 # Error handling
 anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+# Async traits
+async-trait = { workspace = true }
 
 # Tracing
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 
+# Metrics
+metrics = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+
 # Configuration
 config = { workspace = true }
 dotenvy = { workspace = true }
+
+# Arrow / Parquet
+arrow = { workspace = true }
+parquet = { workspace = true }
+
+# AWS SDK (S3)
+aws-sdk-s3 = { workspace = true }
+aws-config = { workspace = true }
+
+# Bytes
+bytes = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
+tokio-test = { workspace = true }
 
 [lints]
 workspace = true
