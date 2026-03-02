@@ -7,6 +7,7 @@
 
 mod signing;
 
+use axum::middleware;
 use registry::{
     config::RegistryConfig,
     db::DbPool,
@@ -15,7 +16,6 @@ use registry::{
     services::{AuditService, CacheService, GrantService, TokenService},
     state::{AppState, HealthState},
 };
-use axum::middleware;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
