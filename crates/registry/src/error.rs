@@ -19,6 +19,10 @@ pub enum RegistryError {
     #[error("grant not found: {0}")]
     GrantNotFound(String),
 
+    /// Grant not approved (cannot issue token).
+    #[error("grant not approved: {0}")]
+    GrantNotApproved(String),
+
     /// Token not found.
     #[error("token not found: {0}")]
     TokenNotFound(String),
@@ -117,6 +121,7 @@ impl IntoResponse for RegistryError {
         let (status, error_code, retry_after) = match &self {
             Self::AgentNotFound(_) => (StatusCode::NOT_FOUND, "agent_not_found", None),
             Self::GrantNotFound(_) => (StatusCode::NOT_FOUND, "grant_not_found", None),
+            Self::GrantNotApproved(_) => (StatusCode::CONFLICT, "grant_not_approved", None),
             Self::TokenNotFound(_) => (StatusCode::NOT_FOUND, "token_not_found", None),
             Self::InvalidManifest(_) => (StatusCode::BAD_REQUEST, "invalid_manifest", None),
             Self::InvalidCapability(_) => (StatusCode::BAD_REQUEST, "invalid_capability", None),
