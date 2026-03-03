@@ -113,6 +113,23 @@ pub async fn get_agent(pool: &PgPool, agent_id: &AgentId) -> Result<Option<Agent
     Ok(row)
 }
 
+/// List all active agents.
+pub async fn list_agents(pool: &PgPool) -> Result<Vec<AgentRow>> {
+    let rows = sqlx::query_as::<_, AgentRow>(
+        r#"
+        SELECT id, human_principal_id, name, description, public_key, key_id,
+               requested_capabilities, default_behavioral_envelope, model_origin,
+               signature, issued_at, expires_at, is_active, created_at
+        FROM agent_manifests
+        ORDER BY created_at DESC
+        "#,
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows)
+}
+
 /// Check if an agent exists.
 pub async fn agent_exists(pool: &PgPool, agent_id: &AgentId) -> Result<bool> {
     // EXPLAIN ANALYZE: Uses primary key index
@@ -147,8 +164,12 @@ pub struct GrantRow {
     pub id: Uuid,
     /// Agent ID.
     pub agent_id: Uuid,
+    /// Agent name (joined from agent_manifests).
+    pub agent_name: String,
     /// Service provider ID.
     pub service_provider_id: Uuid,
+    /// Service provider name (joined from service_providers).
+    pub service_provider_name: String,
     /// Human principal ID (from agent).
     pub human_principal_id: Uuid,
     /// Approved by human principal ID.
@@ -212,12 +233,15 @@ pub async fn insert_grant(
 pub async fn get_grant(pool: &PgPool, grant_id: &GrantId) -> Result<Option<GrantRow>> {
     let row = sqlx::query_as::<_, GrantRow>(
         r#"
-        SELECT g.id, g.agent_id, g.service_provider_id, a.human_principal_id,
+        SELECT g.id, g.agent_id, a.name AS agent_name,
+               g.service_provider_id, sp.name AS service_provider_name,
+               a.human_principal_id,
                g.approved_by, g.granted_capabilities,
                g.behavioral_envelope, g.status::text as status, g.approval_nonce, g.approval_signature,
                g.requested_at, g.decided_at, g.expires_at
         FROM capability_grants g
         INNER JOIN agent_manifests a ON g.agent_id = a.id
+        INNER JOIN service_providers sp ON g.service_provider_id = sp.id
         WHERE g.id = $1
         "#,
     )
@@ -226,6 +250,41 @@ pub async fn get_grant(pool: &PgPool, grant_id: &GrantId) -> Result<Option<Grant
     .await?;
 
     Ok(row)
+}
+
+/// List grants for an agent (with service provider names).
+pub async fn list_grants_for_agent(pool: &PgPool, agent_id: &AgentId) -> Result<Vec<GrantRow>> {
+    let rows = sqlx::query_as::<_, GrantRow>(
+        r#"
+        SELECT g.id, g.agent_id, a.name AS agent_name,
+               g.service_provider_id, sp.name AS service_provider_name,
+               a.human_principal_id,
+               g.approved_by, g.granted_capabilities,
+               g.behavioral_envelope, g.status::text as status, g.approval_nonce, g.approval_signature,
+               g.requested_at, g.decided_at, g.expires_at
+        FROM capability_grants g
+        INNER JOIN agent_manifests a ON g.agent_id = a.id
+        INNER JOIN service_providers sp ON g.service_provider_id = sp.id
+        WHERE g.agent_id = $1
+        ORDER BY g.requested_at DESC
+        "#,
+    )
+    .bind(agent_id.as_uuid())
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows)
+}
+
+/// Count active (approved) grants for an agent.
+pub async fn count_active_grants(pool: &PgPool, agent_id: &AgentId) -> Result<i64> {
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM capability_grants WHERE agent_id = $1 AND status = 'approved'",
+    )
+    .bind(agent_id.as_uuid())
+    .fetch_one(pool)
+    .await?;
+    Ok(count)
 }
 
 /// Count pending grants for an agent.

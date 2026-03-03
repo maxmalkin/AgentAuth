@@ -81,6 +81,11 @@ impl GrantService {
         row.map(|r| Self::row_to_grant(&r)).transpose()
     }
 
+    /// Get a grant by ID, returning the raw database row with joined names.
+    pub async fn get_grant_row(&self, grant_id: &GrantId) -> Result<Option<db::GrantRow>> {
+        db::get_grant(self.db.read_replica(), grant_id).await
+    }
+
     /// Approve a grant.
     pub async fn approve_grant(
         &self,
