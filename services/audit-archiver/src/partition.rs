@@ -157,14 +157,10 @@ pub async fn create_partition(pool: &PgPool, year: i32, month: u32) -> Result<bo
     sqlx::query(&create_sql).execute(pool).await?;
 
     // Grant same permissions as parent table
-    let grant_sql = format!(
-        "GRANT SELECT, INSERT ON {name} TO agentauth_service"
-    );
+    let grant_sql = format!("GRANT SELECT, INSERT ON {name} TO agentauth_service");
     sqlx::query(&grant_sql).execute(pool).await?;
 
-    let revoke_sql = format!(
-        "REVOKE UPDATE, DELETE ON {name} FROM agentauth_service"
-    );
+    let revoke_sql = format!("REVOKE UPDATE, DELETE ON {name} FROM agentauth_service");
     sqlx::query(&revoke_sql).execute(pool).await?;
 
     info!(partition = %name, start = %range_start, end = %range_end, "created partition");
@@ -293,8 +289,14 @@ mod tests {
         let info = parse_partition_name("audit_events_2025_01");
         assert!(info.is_some());
         let info = info.expect("test: known valid");
-        assert_eq!(info.range_start, NaiveDate::from_ymd_opt(2025, 1, 1).expect("test"));
-        assert_eq!(info.range_end, NaiveDate::from_ymd_opt(2025, 2, 1).expect("test"));
+        assert_eq!(
+            info.range_start,
+            NaiveDate::from_ymd_opt(2025, 1, 1).expect("test")
+        );
+        assert_eq!(
+            info.range_end,
+            NaiveDate::from_ymd_opt(2025, 2, 1).expect("test")
+        );
     }
 
     #[test]
@@ -302,7 +304,10 @@ mod tests {
         let info = parse_partition_name("audit_events_2025_12");
         assert!(info.is_some());
         let info = info.expect("test: known valid");
-        assert_eq!(info.range_end, NaiveDate::from_ymd_opt(2026, 1, 1).expect("test"));
+        assert_eq!(
+            info.range_end,
+            NaiveDate::from_ymd_opt(2026, 1, 1).expect("test")
+        );
     }
 
     #[test]

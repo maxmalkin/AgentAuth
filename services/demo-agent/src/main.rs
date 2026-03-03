@@ -12,7 +12,6 @@
 #![allow(clippy::doc_markdown)]
 
 use anyhow::{bail, Context, Result};
-use ed25519_dalek::Signer;
 use axum::extract::Path;
 use axum::http::HeaderMap;
 use axum::routing::{delete, get, post};
@@ -20,6 +19,7 @@ use axum::Router;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
 use chrono::{Duration, Utc};
+use ed25519_dalek::Signer;
 use ed25519_dalek::SigningKey;
 use registry::demo;
 use sdk::{
@@ -78,10 +78,7 @@ async fn main() -> Result<()> {
     println!();
     println!("  ┌─────────────────────────────────────────────────────────┐");
     println!("  │  Grant pending! Approve it in the UI:                   │");
-    println!(
-        "  │  http://localhost:3001/approve/{}   │",
-        &grant_id[..36]
-    );
+    println!("  │  http://localhost:3001/approve/{}   │", &grant_id[..36]);
     println!("  └─────────────────────────────────────────────────────────┘");
     println!();
 
@@ -92,11 +89,10 @@ async fn main() -> Result<()> {
 
     // Store grant in client (re-request to get approved status)
     let sp_id_typed = ServiceProviderId::from_uuid(sp_id);
-    match client.request_grant(
-        sp_id_typed,
-        demo_capabilities(),
-        demo_envelope(),
-    ).await {
+    match client
+        .request_grant(sp_id_typed, demo_capabilities(), demo_envelope())
+        .await
+    {
         Ok(_grant) => info!("Grant loaded into SDK"),
         Err(sdk::SdkError::GrantPending { .. }) => {
             // Still pending? Shouldn't happen after we waited
@@ -180,8 +176,8 @@ fn create_agent_client() -> Result<(AgentAuthClient, uuid::Uuid, uuid::Uuid)> {
     };
 
     let config = SdkConfig::new(REGISTRY_URL).context("Invalid registry URL")?;
-    let client =
-        AgentAuthClient::new(config, signed, &demo::DEMO_AGENT_KEY_SEED).context("Failed to create SDK client")?;
+    let client = AgentAuthClient::new(config, signed, &demo::DEMO_AGENT_KEY_SEED)
+        .context("Failed to create SDK client")?;
 
     Ok((client, agent_id, sp_id))
 }
@@ -290,7 +286,10 @@ async fn issue_token_directly(
         bail!("Token issue failed ({status}): {body}");
     }
 
-    let token: TokenResp = resp.json().await.context("Failed to parse token response")?;
+    let token: TokenResp = resp
+        .json()
+        .await
+        .context("Failed to parse token response")?;
     Ok(token.jti.to_string())
 }
 
@@ -339,7 +338,11 @@ async fn run_demo_requests(token: &str, sp_id: uuid::Uuid) -> Vec<DemoResult> {
                 let reason = body
                     .get("message")
                     .and_then(|m| m.as_str())
-                    .unwrap_or(if status == 200 { "Capability granted" } else { "Unknown" })
+                    .unwrap_or(if status == 200 {
+                        "Capability granted"
+                    } else {
+                        "Unknown"
+                    })
                     .to_string();
 
                 results.push(DemoResult {
@@ -555,7 +558,10 @@ async fn handle_files_write(headers: HeaderMap) -> axum::response::Response {
     }
 }
 
-async fn handle_files_delete(headers: HeaderMap, Path(path): Path<String>) -> axum::response::Response {
+async fn handle_files_delete(
+    headers: HeaderMap,
+    Path(path): Path<String>,
+) -> axum::response::Response {
     match verify_token(&headers).await {
         Ok(v) if has_capability(v.granted_capabilities.as_ref(), "delete", "files") => {
             axum::Json(serde_json::json!({
