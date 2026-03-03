@@ -214,6 +214,9 @@ pub struct AgentSummaryResponse {
     pub status: String,
     /// Number of active grants.
     pub active_grants: i64,
+    /// Most recent pending grant ID (if any), for direct approve link.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pending_grant_id: Option<Uuid>,
 }
 
 /// List all agents.
@@ -228,6 +231,7 @@ pub async fn list_agents(
     for row in &rows {
         let agent_id = AgentId::from_uuid(row.id);
         let grant_count = db::count_active_grants(state.db.read_replica(), &agent_id).await.unwrap_or(0);
+        let pending_grant_id = db::get_pending_grant_id(state.db.read_replica(), &agent_id).await.unwrap_or(None);
         let status = if row.is_active { "active" } else { "revoked" };
         summaries.push(AgentSummaryResponse {
             agent_id: row.id,
@@ -235,6 +239,7 @@ pub async fn list_agents(
             registered_at: row.created_at.to_rfc3339(),
             status: status.to_string(),
             active_grants: grant_count,
+            pending_grant_id,
         });
     }
 

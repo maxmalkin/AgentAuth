@@ -299,6 +299,17 @@ pub async fn count_pending_grants(pool: &PgPool, agent_id: &AgentId) -> Result<i
     Ok(count)
 }
 
+/// Get the most recent pending grant ID for an agent, if any.
+pub async fn get_pending_grant_id(pool: &PgPool, agent_id: &AgentId) -> Result<Option<Uuid>> {
+    let id: Option<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM capability_grants WHERE agent_id = $1 AND status = 'pending' ORDER BY requested_at DESC LIMIT 1",
+    )
+    .bind(agent_id.as_uuid())
+    .fetch_optional(pool)
+    .await?;
+    Ok(id)
+}
+
 /// Approve a grant.
 pub async fn approve_grant(
     pool: &PgPool,

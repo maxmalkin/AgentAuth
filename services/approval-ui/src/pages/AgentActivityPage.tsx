@@ -319,14 +319,24 @@ function GrantRow({ grant, onRevoke }: { grant: GrantSummary; onRevoke: () => vo
             {new Date(grant.created_at).toLocaleDateString()}
           </div>
         </div>
-        {grant.status === 'active' && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onRevoke(); }}
-            className="px-3 py-1.5 border border-border text-text-muted font-mono text-[10px] tracking-wide hover:border-red hover:text-red transition-colors shrink-0"
-          >
-            REVOKE
-          </button>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {grant.status === 'pending' && (
+            <Link
+              to={`/approve/${grant.grant_id}`}
+              className="px-3 py-1.5 bg-amber text-surface font-mono text-[10px] tracking-wide hover:bg-amber-dim transition-colors"
+            >
+              APPROVE
+            </Link>
+          )}
+          {(grant.status === 'active' || grant.status === 'approved') && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRevoke(); }}
+              className="px-3 py-1.5 border border-border text-text-muted font-mono text-[10px] tracking-wide hover:border-red hover:text-red transition-colors"
+            >
+              REVOKE
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

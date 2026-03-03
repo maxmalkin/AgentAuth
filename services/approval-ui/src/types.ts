@@ -34,6 +34,7 @@ export interface GrantRequest {
   agent_name: string;
   service_provider_id: string;
   service_provider_name: string;
+  human_principal_id: string;
   requested_capabilities: Capability[];
   requested_envelope: BehavioralEnvelope;
   created_at: string;
@@ -48,6 +49,7 @@ export interface AgentSummary {
   registered_at: string;
   status: 'active' | 'suspended' | 'revoked';
   active_grants: number;
+  pending_grant_id?: string;
 }
 
 /** Agent details */
