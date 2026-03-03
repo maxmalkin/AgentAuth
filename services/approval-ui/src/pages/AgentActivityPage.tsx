@@ -289,13 +289,17 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function GrantRow({ grant, onRevoke }: { grant: GrantSummary; onRevoke: () => void }) {
-  const grantStatus = {
+  const grantStatus: Record<string, { color: string; text: string; label: string }> = {
     active: { color: 'bg-green', text: 'text-green', label: 'ACTIVE' },
+    approved: { color: 'bg-green', text: 'text-green', label: 'APPROVED' },
+    pending: { color: 'bg-amber', text: 'text-amber', label: 'PENDING' },
+    denied: { color: 'bg-red', text: 'text-red', label: 'DENIED' },
     revoked: { color: 'bg-red', text: 'text-red', label: 'REVOKED' },
     expired: { color: 'bg-text-muted', text: 'text-text-muted', label: 'EXPIRED' },
   };
 
-  const status = grantStatus[grant.status];
+  const fallback = { color: 'bg-text-muted', text: 'text-text-muted', label: grant.status.toUpperCase() };
+  const status = grantStatus[grant.status] ?? fallback;
 
   return (
     <div className="border border-border bg-panel hover:bg-panel-hover transition-colors">
