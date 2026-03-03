@@ -121,7 +121,7 @@ DATABASE_URL="postgres://agentauth:agentauth_dev@localhost:5434/agentauth" \
 
 # Build Rust binaries first so startup is fast
 echo -e "${CYAN}Building Rust binaries...${RESET}"
-cargo build -p registry-bin -p verifier-bin 2>&1 | prefix_output "$CYAN" "build"
+cargo build -p registry-bin -p verifier-bin -p demo-agent 2>&1 | prefix_output "$CYAN" "build"
 
 echo ""
 echo -e "${BOLD}Starting services...${RESET}"
@@ -139,13 +139,21 @@ PIDS+=($!)
 (cd services/approval-ui && bun run dev) 2>&1 | prefix_output "$MAGENTA" "approval" &
 PIDS+=($!)
 
+# Start demo agent (waits for registry internally)
+YELLOW='\033[0;33m'
+(sleep 5 && cargo run -p demo-agent) 2>&1 | prefix_output "$YELLOW" "demo-agent" &
+PIDS+=($!)
+
 echo -e "${BOLD}${CYAN}"
 echo "  ┌──────────────────────────────────────┐"
 echo "  │  Registry:    http://localhost:${REGISTRY_PORT:-8080}    │"
 echo "  │  Verifier:    http://localhost:${VERIFIER_PORT:-8081}    │"
 echo "  │  Approval UI: http://localhost:${PORT:-3001}    │"
-echo "  │                                      │"
-echo "  │  Press Ctrl+C to stop all services   │"
+echo "  │  Mock Service: http://localhost:9090  │"
+echo "  │  Grafana:     http://localhost:3000    │"
+echo "  │  Demo Agent:  running                 │"
+echo "  │                                       │"
+echo "  │  Press Ctrl+C to stop all services    │"
 echo "  └──────────────────────────────────────┘"
 echo -e "${RESET}"
 
