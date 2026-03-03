@@ -53,6 +53,8 @@ pub struct GrantResponse {
     pub behavioral_envelope: BehavioralEnvelope,
     /// Alias for `behavioral_envelope` — used by the approval UI.
     pub requested_envelope: BehavioralEnvelope,
+    /// Human principal who owns this agent.
+    pub human_principal_id: Uuid,
     /// Grant status.
     pub status: String,
     /// When the grant was requested.
@@ -257,6 +259,7 @@ fn grant_to_response_with_names(
         agent_name,
         service_provider_id: grant.service_provider_id.0,
         service_provider_name,
+        human_principal_id: grant.human_principal_id.0,
         granted_capabilities: grant.requested_capabilities.clone(),
         requested_capabilities: grant.requested_capabilities.clone(),
         behavioral_envelope: grant.requested_envelope.clone(),
@@ -299,6 +302,7 @@ fn grant_row_to_response(row: &GrantRow) -> Result<GrantResponse> {
         agent_name: row.agent_name.clone(),
         service_provider_id: row.service_provider_id,
         service_provider_name: row.service_provider_name.clone(),
+        human_principal_id: row.human_principal_id,
         granted_capabilities: capabilities.clone(),
         requested_capabilities: capabilities,
         behavioral_envelope: envelope.clone(),

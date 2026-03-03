@@ -90,10 +90,7 @@ export function ApprovalPage() {
       crypto.getRandomValues(sigBytes);
       const signature = Array.from(sigBytes, (b) => b.toString(16).padStart(2, '0')).join('');
 
-      // Use a fixed demo user UUID as approved_by
-      const demoUserId = '00000000-0000-0000-0000-000000000001';
-
-      await approveGrant(grant.grant_id, demoUserId, nonce, signature);
+      await approveGrant(grant.grant_id, grant.human_principal_id, nonce, signature);
       setState({ type: 'success', action: 'approved' });
     } catch (err) {
       setState({
