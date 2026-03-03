@@ -26,14 +26,17 @@ export function DashboardPage() {
 	);
 	const [iframeError, setIframeError] = useState(false);
 
-	// iframe onError doesn't fire for ERR_CONNECTION_REFUSED — probe Grafana on mount.
-	useEffect(() => {
+	// Probe Grafana availability. iframe onError doesn't fire for ERR_CONNECTION_REFUSED.
+	const probeGrafana = () => {
 		const controller = new AbortController();
 		fetch(GRAFANA_BASE_URL, {
 			mode: "no-cors",
 			signal: controller.signal,
 		}).catch(() => setIframeError(true));
-		return () => controller.abort();
+	};
+
+	useEffect(() => {
+		probeGrafana();
 	}, []);
 
 	const activeDashboard = DASHBOARDS[activeTab];
@@ -42,6 +45,11 @@ export function DashboardPage() {
 	function handleTabChange(tab: DashboardTab) {
 		setActiveTab(tab);
 		setIframeError(false);
+	}
+
+	function handleRetry() {
+		setIframeError(false);
+		probeGrafana();
 	}
 
 	return (
@@ -112,7 +120,7 @@ export function DashboardPage() {
 								</div>
 							</div>
 							<button
-								onClick={() => setIframeError(false)}
+								onClick={handleRetry}
 								className="mt-5 w-full py-2.5 border border-border text-text-secondary font-mono text-xs tracking-wide hover:border-amber hover:text-amber transition-colors"
 							>
 								RETRY
