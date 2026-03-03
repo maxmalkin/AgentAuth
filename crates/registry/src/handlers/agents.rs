@@ -36,14 +36,18 @@ pub struct RegisterAgentResponse {
 /// Agent details response (matches UI AgentDetails type).
 #[derive(Debug, Serialize)]
 pub struct AgentResponse {
-    /// Agent ID.
+    /// Agent ID (also emitted as `agent_id` for compatibility).
+    pub id: Uuid,
+    /// Alias for `id`.
     pub agent_id: Uuid,
     /// Agent name.
     pub name: String,
     /// When the agent was registered.
     pub registered_at: String,
-    /// Current status.
+    /// Current status string.
     pub status: String,
+    /// Whether the agent is active (convenience boolean).
+    pub is_active: bool,
     /// Public key (hex encoded).
     pub public_key: String,
     /// Requested capabilities.
@@ -322,10 +326,12 @@ fn row_to_response(row: &AgentRow, grant_rows: &[db::GrantRow]) -> Result<AgentR
         .collect();
 
     Ok(AgentResponse {
+        id: row.id,
         agent_id: row.id,
         name: row.name.clone(),
         registered_at: row.created_at.to_rfc3339(),
         status: status.to_string(),
+        is_active: row.is_active,
         public_key: hex::encode(&row.public_key),
         capabilities,
         grants,
