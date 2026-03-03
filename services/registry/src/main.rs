@@ -51,6 +51,10 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Database pool created successfully");
 
+    // Ensure audit_events partition exists for the current month.
+    // The base migration only creates 2025-01 and 2025-02 partitions.
+    ensure_audit_partition(db.primary()).await;
+
     // Create cache service (Redis)
     let cache = Arc::new(CacheService::new(&config.redis).await.map_err(|e| {
         error!(error = %e, "Failed to create cache service");
@@ -163,6 +167,33 @@ fn init_tracing(log_level: &str) {
         .with(filter)
         .with(tracing_subscriber::fmt::layer().json())
         .init();
+}
+
+/// Create the audit_events partition for the current month if it doesn't exist.
+async fn ensure_audit_partition(pool: &sqlx::PgPool) {
+    let now = chrono::Utc::now();
+    let partition = format!("audit_events_{}_{:02}", now.format("%Y"), now.format("%m"));
+    let start = format!("{}-{:02}-01", now.format("%Y"), now.format("%m"));
+    let next = now + chrono::Duration::days(32);
+    let end = format!("{}-{:02}-01", next.format("%Y"), next.format("%m"));
+    let sql = format!(
+        "CREATE TABLE {partition} PARTITION OF audit_events \
+         FOR VALUES FROM ('{start}') TO ('{end}')"
+    );
+    match sqlx::query(&sql).execute(pool).await {
+        Ok(_) => info!("Created audit partition {partition}"),
+        Err(e)
+            if e.as_database_error()
+                .and_then(|e| e.code())
+                .as_deref()
+                == Some("42P07") =>
+        {
+            info!("Audit partition {partition} already exists");
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "Failed to create audit partition — audit writes may fail");
+        }
+    }
 }
 
 /// Create shutdown signal handler.
