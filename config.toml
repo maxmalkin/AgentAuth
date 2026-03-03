@@ -51,3 +51,6 @@ revocation_propagation_ms = 100
 [observability]
 service_name = "agentauth-registry"
 log_level = "info"
+
+[demo]
+enabled = true

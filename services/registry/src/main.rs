@@ -55,6 +55,11 @@ async fn main() -> anyhow::Result<()> {
     // The base migration only creates 2025-01 and 2025-02 partitions.
     ensure_audit_partition(db.primary()).await;
 
+    // Seed demo data if enabled
+    if config.demo.enabled {
+        registry::demo::seed_demo_data(db.primary()).await;
+    }
+
     // Create cache service (Redis)
     let cache = Arc::new(CacheService::new(&config.redis).await.map_err(|e| {
         error!(error = %e, "Failed to create cache service");

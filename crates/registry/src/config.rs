@@ -20,6 +20,17 @@ pub struct RegistryConfig {
     pub tokens: TokenConfig,
     /// Observability configuration.
     pub observability: ObservabilityConfig,
+    /// Demo mode configuration.
+    #[serde(default)]
+    pub demo: DemoConfig,
+}
+
+/// Demo mode configuration.
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct DemoConfig {
+    /// Whether to seed demo data on startup.
+    #[serde(default)]
+    pub enabled: bool,
 }
 
 /// Server configuration.
