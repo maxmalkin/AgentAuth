@@ -1,11 +1,12 @@
 import { Router, Link } from './Router';
-import { ApprovalPage, AgentsPage, AgentActivityPage } from './pages';
+import { ApprovalPage, AgentsPage, AgentActivityPage, DashboardPage } from './pages';
 
 const routes = [
   { pattern: '/', component: HomePage },
   { pattern: '/approve/:grant_id', component: ApprovalPage },
   { pattern: '/agents', component: AgentsPage },
   { pattern: '/agents/:agent_id/activity', component: AgentActivityPage },
+  { pattern: '/dashboard', component: DashboardPage },
 ];
 
 function HomePage() {
@@ -42,6 +43,16 @@ function HomePage() {
               <rect x="9" y="9" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
             </svg>
             VIEW AGENTS
+          </Link>
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 px-6 py-3 border border-border text-text-secondary font-mono text-sm font-medium tracking-wide hover:border-amber hover:text-amber transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 12L5.5 6L8.5 9L14 3" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M2 14H14" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            DASHBOARD
           </Link>
         </div>
       </div>

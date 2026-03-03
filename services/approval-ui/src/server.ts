@@ -9,6 +9,7 @@ Bun.serve({
     "/approve/:grant_id": index,
     "/agents": index,
     "/agents/:agent_id/activity": index,
+    "/dashboard": index,
   },
   development: {
     hmr: true,
