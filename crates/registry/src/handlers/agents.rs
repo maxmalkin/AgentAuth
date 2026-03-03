@@ -347,10 +347,16 @@ mod hex_serde {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        // Accept base64url (SDK/SignedManifest format) or fall back to hex (legacy)
-        URL_SAFE_NO_PAD
+        // Accept base64url (SDK/SignedManifest format) or hex (test/legacy).
+        // A valid Ed25519 signature is exactly 64 bytes — use the length to
+        // disambiguate, because a 128-char hex string is accidentally valid
+        // base64url (decodes to 96 bytes, not 64).
+        let decoded = URL_SAFE_NO_PAD
             .decode(&s)
-            .or_else(|_| hex::decode(&s))
-            .map_err(|_| serde::de::Error::custom("expected base64url or hex encoded signature"))
+            .ok()
+            .filter(|b| b.len() == 64)
+            .or_else(|| hex::decode(&s).ok().filter(|b| b.len() == 64))
+            .ok_or_else(|| serde::de::Error::custom("expected base64url or hex encoded ed25519 signature (64 bytes)"))?;
+        Ok(decoded)
     }
 }
