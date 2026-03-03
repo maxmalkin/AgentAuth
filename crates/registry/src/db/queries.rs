@@ -229,6 +229,36 @@ pub async fn insert_grant(
     Ok(())
 }
 
+/// Get the most recent pending grant for an agent + service provider (for idempotency).
+pub async fn get_pending_grant_for_agent_sp(
+    pool: &PgPool,
+    agent_id: &AgentId,
+    service_provider_id: Uuid,
+) -> Result<Option<GrantRow>> {
+    let row = sqlx::query_as::<_, GrantRow>(
+        r#"
+        SELECT g.id, g.agent_id, a.name AS agent_name,
+               g.service_provider_id, sp.name AS service_provider_name,
+               a.human_principal_id,
+               g.approved_by, g.granted_capabilities,
+               g.behavioral_envelope, g.status::text as status, g.approval_nonce, g.approval_signature,
+               g.requested_at, g.decided_at, g.expires_at
+        FROM capability_grants g
+        INNER JOIN agent_manifests a ON g.agent_id = a.id
+        INNER JOIN service_providers sp ON g.service_provider_id = sp.id
+        WHERE g.agent_id = $1 AND g.service_provider_id = $2 AND g.status = 'pending'
+        ORDER BY g.requested_at DESC
+        LIMIT 1
+        "#,
+    )
+    .bind(agent_id.as_uuid())
+    .bind(service_provider_id)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row)
+}
+
 /// Get a grant by ID.
 pub async fn get_grant(pool: &PgPool, grant_id: &GrantId) -> Result<Option<GrantRow>> {
     let row = sqlx::query_as::<_, GrantRow>(
