@@ -10,15 +10,17 @@ members = [
     "services/verifier",
     "services/audit-archiver",
     "tests/compliance",
+    "tests/integration",
+    "tests/stability",
 ]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/agentauth/agentauth"
-authors = ["AgentAuth Contributors"]
+license = "MIT"
+repository = "https://github.com/maxmalkin/AgentAuth"
+authors = ["Max Malkin"]
 
 [workspace.dependencies]
 # Async runtime
