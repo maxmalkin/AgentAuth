@@ -9,8 +9,8 @@ const mockGrant: GrantRequest = {
   service_provider_id: 'sp_01JTEST123456789012345678',
   service_provider_name: 'Test Service Provider',
   requested_capabilities: [
-    { type: 'Read', resource: 'calendar', filter: null },
-    { type: 'Write', resource: 'calendar', conditions: null },
+    { type: 'read', resource: 'calendar', filter: null },
+    { type: 'write', resource: 'calendar', conditions: null },
   ],
   requested_envelope: {
     max_requests_per_minute: 30,
@@ -30,9 +30,9 @@ const mockHighRiskGrant: GrantRequest = {
   ...mockGrant,
   grant_id: 'grant_01JTEST123456789012345679',
   requested_capabilities: [
-    { type: 'Read', resource: 'calendar', filter: null },
-    { type: 'Transact', resource: 'payments', max_value: 1000 },
-    { type: 'Delete', resource: 'documents', filter: null },
+    { type: 'read', resource: 'calendar', filter: null },
+    { type: 'transact', resource: 'payments', max_value: 1000 },
+    { type: 'delete', resource: 'documents', filter: null },
   ],
 };
 

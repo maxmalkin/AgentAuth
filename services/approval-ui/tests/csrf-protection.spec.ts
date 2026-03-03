@@ -8,7 +8,7 @@ const mockGrant: GrantRequest = {
   service_provider_id: 'sp_01JTEST123456789012345678',
   service_provider_name: 'Test Service Provider',
   requested_capabilities: [
-    { type: 'Read', resource: 'calendar', filter: null },
+    { type: 'read', resource: 'calendar', filter: null },
   ],
   requested_envelope: {
     max_requests_per_minute: 30,

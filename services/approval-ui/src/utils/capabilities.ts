@@ -4,7 +4,7 @@ import type { Capability, BehavioralEnvelope, TimeWindow } from '../types';
 
 /** Check if a capability requires two-step confirmation */
 export function requiresTwoStep(capability: Capability): boolean {
-  return capability.type === 'Transact' || capability.type === 'Delete';
+  return capability.type === 'transact' || capability.type === 'delete';
 }
 
 /** Get the risk level of a capability */
@@ -12,14 +12,14 @@ export function getCapabilityRiskLevel(
   capability: Capability
 ): 'low' | 'medium' | 'high' {
   switch (capability.type) {
-    case 'Read':
+    case 'read':
       return 'low';
-    case 'Write':
+    case 'write':
       return 'medium';
-    case 'Transact':
-    case 'Delete':
+    case 'transact':
+    case 'delete':
       return 'high';
-    case 'Custom':
+    case 'custom':
       // Custom capabilities are medium risk by default
       return 'medium';
   }
@@ -28,13 +28,13 @@ export function getCapabilityRiskLevel(
 /** Translate a capability to human-readable text */
 export function capabilityToHumanReadable(capability: Capability): string {
   switch (capability.type) {
-    case 'Read':
+    case 'read':
       if (capability.filter) {
         return `Read ${capability.resource} (filtered: ${capability.filter})`;
       }
       return `Read ${capability.resource}`;
 
-    case 'Write':
+    case 'write':
       if (capability.conditions && Object.keys(capability.conditions).length > 0) {
         const condStr = Object.entries(capability.conditions)
           .map(([k, v]) => `${k}=${v}`)
@@ -43,16 +43,16 @@ export function capabilityToHumanReadable(capability: Capability): string {
       }
       return `Write to ${capability.resource}`;
 
-    case 'Transact':
+    case 'transact':
       return `Make transactions on ${capability.resource} up to ${formatCurrency(capability.max_value)}`;
 
-    case 'Delete':
+    case 'delete':
       if (capability.filter) {
         return `Delete from ${capability.resource} (filtered: ${capability.filter})`;
       }
       return `Delete from ${capability.resource}`;
 
-    case 'Custom':
+    case 'custom':
       const params = Object.entries(capability.params)
         .map(([k, v]) => `${k}=${v}`)
         .join(', ');
