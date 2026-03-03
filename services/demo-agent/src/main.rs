@@ -33,7 +33,7 @@ use tracing::{error, info, warn};
 
 const REGISTRY_URL: &str = "http://localhost:8080";
 const VERIFIER_URL: &str = "http://localhost:8081";
-const MOCK_SP_PORT: u16 = 9090;
+const MOCK_SP_PORT: u16 = 9095;
 
 // ============================================================================
 // Main

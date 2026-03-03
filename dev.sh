@@ -149,7 +149,7 @@ echo "  ┌───────────────────────
 echo "  │  Registry:    http://localhost:${REGISTRY_PORT:-8080}    │"
 echo "  │  Verifier:    http://localhost:${VERIFIER_PORT:-8081}    │"
 echo "  │  Approval UI: http://localhost:${PORT:-3001}    │"
-echo "  │  Mock Service: http://localhost:9090  │"
+echo "  │  Mock Service: http://localhost:9095  │"
 echo "  │  Grafana:     http://localhost:3000    │"
 echo "  │  Demo Agent:  running                 │"
 echo "  │                                       │"

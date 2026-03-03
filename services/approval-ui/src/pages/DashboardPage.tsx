@@ -8,11 +8,11 @@ const GRAFANA_BASE_URL = 'http://localhost:3000';
 const DASHBOARDS: Record<DashboardTab, { label: string; uid: string }> = {
   'token-verification-slo': {
     label: 'TOKEN VERIFICATION SLO',
-    uid: 'token-verification-slo',
+    uid: 'agentauth-verify-slo',
   },
   'circuit-breakers': {
     label: 'CIRCUIT BREAKERS',
-    uid: 'circuit-breakers',
+    uid: 'agentauth-circuit-breakers',
   },
 };
 
