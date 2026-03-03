@@ -22,9 +22,11 @@ pub struct RequestGrantRequest {
     pub agent_id: Uuid,
     /// Service provider ID.
     pub service_provider_id: Uuid,
-    /// Requested capabilities.
+    /// Requested capabilities (also accepted as `requested_capabilities` from SDK).
+    #[serde(alias = "requested_capabilities")]
     pub capabilities: Vec<Capability>,
-    /// Behavioral envelope.
+    /// Behavioral envelope (also accepted as `requested_envelope` from SDK).
+    #[serde(alias = "requested_envelope")]
     pub behavioral_envelope: BehavioralEnvelope,
 }
 

@@ -332,8 +332,9 @@ fn row_to_response(row: &AgentRow, grant_rows: &[db::GrantRow]) -> Result<AgentR
     })
 }
 
-/// Hex serialization helper.
+/// Base64url serialization helper (matches SignedManifest.signature encoding).
 mod hex_serde {
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
     use serde::{Deserialize, Deserializer};
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
@@ -341,6 +342,10 @@ mod hex_serde {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        hex::decode(&s).map_err(serde::de::Error::custom)
+        // Accept base64url (SDK/SignedManifest format) or fall back to hex (legacy)
+        URL_SAFE_NO_PAD
+            .decode(&s)
+            .or_else(|_| hex::decode(&s))
+            .map_err(|_| serde::de::Error::custom("expected base64url or hex encoded signature"))
     }
 }
