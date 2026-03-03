@@ -1,0 +1,33 @@
+# AgentAuth Verifier — Local Development Configuration
+#
+# This file is loaded automatically by the verifier service.
+# Environment variables with prefix AGENTAUTH_VERIFIER__ override these values.
+
+[server]
+host = "0.0.0.0"
+port = 8081
+metrics_port = 9092
+shutdown_timeout_secs = 20
+
+[database]
+primary_url = "postgres://agentauth:agentauth_dev@localhost:5434/agentauth"
+replica_urls = []
+max_connections = 16
+connect_timeout_secs = 5
+query_timeout_secs = 5
+
+[redis]
+urls = ["redis://localhost:6380"]
+timeout_secs = 2
+token_cache_prefix = "token:"
+nonce_store_prefix = "nonce:"
+rate_limit_prefix = "rl:"
+
+[observability]
+service_name = "agentauth-verifier"
+log_level = "info"
+
+[verification]
+nonce_ttl_secs = 900
+max_clock_skew_secs = 30
+require_dpop = false

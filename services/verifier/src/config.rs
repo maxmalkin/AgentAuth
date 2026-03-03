@@ -91,9 +91,13 @@ fn default_require_dpop() -> bool {
 }
 
 impl VerifierConfig {
-    /// Load configuration from environment.
+    /// Load configuration from config file (optional) and environment variables.
+    ///
+    /// Loads `verifier-config.toml` if present, then applies environment variable
+    /// overrides with prefix `AGENTAUTH_VERIFIER__`.
     pub fn from_env() -> Result<Self, config::ConfigError> {
         config::Config::builder()
+            .add_source(config::File::with_name("verifier-config").required(false))
             .add_source(config::Environment::with_prefix("AGENTAUTH_VERIFIER").separator("__"))
             .build()?
             .try_deserialize()

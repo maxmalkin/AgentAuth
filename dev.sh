@@ -53,8 +53,8 @@ check_prereqs() {
         missing=1
     fi
 
-    if [ ! -f .env ]; then
-        echo -e "${RED}Error: .env file not found. Copy .env.example to .env and fill in values.${RESET}"
+    if ! command -v sqlx &>/dev/null; then
+        echo -e "${RED}Error: sqlx-cli not found. Install via: cargo install sqlx-cli${RESET}"
         missing=1
     fi
 
@@ -68,8 +68,17 @@ ensure_docker() {
     if ! docker compose ps --status running 2>/dev/null | grep -q "postgres\|redis"; then
         echo -e "${CYAN}Docker services not running. Starting docker-compose...${RESET}"
         docker compose up -d
-        echo -e "${CYAN}Waiting for services to be ready...${RESET}"
-        sleep 3
+        echo -e "${CYAN}Waiting for PostgreSQL to be ready...${RESET}"
+        local retries=0
+        until docker compose exec -T postgres-primary pg_isready -U agentauth -q 2>/dev/null; do
+            retries=$((retries + 1))
+            if [ $retries -ge 30 ]; then
+                echo -e "${RED}PostgreSQL not ready after 30s. Check docker-compose logs.${RESET}"
+                exit 1
+            fi
+            sleep 1
+        done
+        echo -e "${GREEN}PostgreSQL is ready.${RESET}"
     else
         echo -e "${GREEN}Docker services already running.${RESET}"
     fi
@@ -96,12 +105,19 @@ echo -e "${RESET}"
 
 check_prereqs
 
-# Load environment
-set -a
-source .env
-set +a
+# Load .env if it exists (config.toml is the primary config source)
+if [ -f .env ]; then
+    set -a
+    source .env
+    set +a
+fi
 
 ensure_docker
+
+# Run database migrations
+echo -e "${CYAN}Running database migrations...${RESET}"
+DATABASE_URL="postgres://agentauth:agentauth_dev@localhost:5434/agentauth" \
+    sqlx migrate run --source migrations 2>&1 | prefix_output "$CYAN" "migrate"
 
 # Build Rust binaries first so startup is fast
 echo -e "${CYAN}Building Rust binaries...${RESET}"

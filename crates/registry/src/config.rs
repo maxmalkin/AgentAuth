@@ -271,9 +271,13 @@ fn default_log_level() -> String {
 }
 
 impl RegistryConfig {
-    /// Load configuration from environment.
+    /// Load configuration from config file (optional) and environment variables.
+    ///
+    /// Loads `config.toml` if present, then applies environment variable overrides
+    /// with prefix `AGENTAUTH__` (e.g., `AGENTAUTH__SERVER__PORT=8080`).
     pub fn from_env() -> Result<Self, config::ConfigError> {
         config::Config::builder()
+            .add_source(config::File::with_name("config").required(false))
             .add_source(config::Environment::with_prefix("AGENTAUTH").separator("__"))
             .build()?
             .try_deserialize()
