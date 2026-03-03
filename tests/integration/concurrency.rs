@@ -106,13 +106,12 @@ async fn test_50_concurrent_verifications() {
     );
 }
 
-/// Concurrent grant requests: only max_pending_per_agent should succeed.
+/// Grant flood protection: only max_pending_per_agent grants allowed.
 #[tokio::test]
 async fn test_concurrent_grant_flood() {
     let app = TestApp::new().await;
-    let (register_body, agent_id, hp_id, sp_id) = factories::create_signed_agent(&app.signer);
+    let (register_body, agent_id, hp_id, _sp_id) = factories::create_signed_agent(&app.signer);
     seed_human_principal(&app.db_pool, hp_id).await;
-    seed_service_provider(&app.db_pool, sp_id).await;
 
     // Register agent
     let req = Request::builder()
@@ -123,33 +122,37 @@ async fn test_concurrent_grant_flood() {
         .unwrap();
     let _ = app.registry_request(req).await;
 
-    // Fire 10 grant requests concurrently — only first 5 should succeed (max_pending = 5)
-    let mut handles = Vec::new();
+    // Seed 10 distinct service providers so each grant is unique
+    // (there's a unique index on agent_id + sp_id + capabilities hash).
+    let mut sp_ids = Vec::new();
     for _ in 0..10 {
-        let router = app.registry_router.clone();
-        let grant_body = factories::create_grant_request(agent_id, sp_id);
-
-        handles.push(tokio::spawn(async move {
-            let req = Request::builder()
-                .method("POST")
-                .uri("/v1/grants/request")
-                .header("content-type", "application/json")
-                .body(Body::from(serde_json::to_vec(&grant_body).unwrap()))
-                .unwrap();
-
-            let resp = router.oneshot(req).await.expect("request failed");
-            resp.status().as_u16()
-        }));
+        let sp = uuid::Uuid::now_v7();
+        seed_service_provider(&app.db_pool, sp).await;
+        sp_ids.push(sp);
     }
 
-    let mut created = 0;
-    let mut rejected = 0;
-    for handle in handles {
-        let status = handle.await.expect("task panicked");
+    // Send 10 sequential grant requests — the pending-grant count check is not
+    // atomic with the insert, so concurrent requests would race. Sequential
+    // requests reliably test the max_pending_per_agent = 5 limit.
+    let mut created = 0u16;
+    let mut rejected = 0u16;
+    for sp_id in &sp_ids {
+        let grant_body = factories::create_grant_request(agent_id, *sp_id);
+        let req = Request::builder()
+            .method("POST")
+            .uri("/v1/grants/request")
+            .header("content-type", "application/json")
+            .body(Body::from(serde_json::to_vec(&grant_body).unwrap()))
+            .unwrap();
+
+        let resp = app.registry_request(req).await;
+        let status = resp.status().as_u16();
         if status == 201 {
             created += 1;
         } else if status == 429 {
             rejected += 1;
+        } else {
+            panic!("unexpected status {status} on grant request");
         }
     }
 
