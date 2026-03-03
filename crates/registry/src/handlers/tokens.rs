@@ -139,7 +139,7 @@ pub async fn issue_token(
     // Resolve token binding: prefer explicit token_binding, fall back to dpop_thumbprint as bytes
     let token_binding = req
         .token_binding
-        .or_else(|| req.dpop_thumbprint.map(|t| t.into_bytes()));
+        .or_else(|| req.dpop_thumbprint.map(String::into_bytes));
 
     // Issue the token (idempotent)
     let token = state

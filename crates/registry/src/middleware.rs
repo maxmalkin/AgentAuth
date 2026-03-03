@@ -106,8 +106,8 @@ pub fn cors_layer() -> tower_http::cors::CorsLayer {
             axum::http::header::HeaderName::from_static("agentdpop"),
         ])
         .allow_origin([
-            "http://localhost:3001".parse().expect("valid origin"),
-            "http://localhost:3000".parse().expect("valid origin"),
+            axum::http::HeaderValue::from_static("http://localhost:3001"),
+            axum::http::HeaderValue::from_static("http://localhost:3000"),
         ])
         .allow_credentials(true)
         .max_age(std::time::Duration::from_secs(3600))

@@ -189,7 +189,7 @@ async fn ensure_audit_partition(pool: &sqlx::PgPool) {
         Ok(_) => info!("Created audit partition {partition}"),
         Err(e)
             if e.as_database_error()
-                .and_then(|e| e.code())
+                .and_then(sqlx::error::DatabaseError::code)
                 .as_deref()
                 == Some("42P07") =>
         {

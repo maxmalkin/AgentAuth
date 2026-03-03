@@ -264,6 +264,11 @@ async fn wait_for_approval(grant_id: &str) -> Result<()> {
     bail!("Timed out waiting for grant approval")
 }
 
+#[derive(Deserialize)]
+struct TokenResp {
+    jti: uuid::Uuid,
+}
+
 async fn issue_token_directly(
     grant_id: &str,
     _agent_id: uuid::Uuid,
@@ -285,10 +290,6 @@ async fn issue_token_directly(
         bail!("Token issue failed ({status}): {body}");
     }
 
-    #[derive(Deserialize)]
-    struct TokenResp {
-        jti: uuid::Uuid,
-    }
     let token: TokenResp = resp.json().await.context("Failed to parse token response")?;
     Ok(token.jti.to_string())
 }
@@ -319,7 +320,6 @@ async fn run_demo_requests(token: &str, sp_id: uuid::Uuid) -> Vec<DemoResult> {
     for (method, path, action) in actions {
         let url = format!("{base}{path}");
         let req = match method {
-            "GET" => http.get(&url),
             "POST" => http.post(&url),
             "DELETE" => http.delete(&url),
             _ => http.get(&url),
@@ -387,7 +387,7 @@ fn print_results(results: &[DemoResult]) {
     let allowed = results.iter().filter(|r| r.allowed).count();
     let denied = results.iter().filter(|r| !r.allowed).count();
     println!();
-    println!("  {} allowed, {} denied", allowed, denied);
+    println!("  {allowed} allowed, {denied} denied");
 }
 
 // ============================================================================
@@ -487,7 +487,7 @@ async fn verify_token(headers: &HeaderMap) -> Result<VerifyResponse, (u16, Strin
 }
 
 fn has_capability(
-    caps: &Option<serde_json::Value>,
+    caps: Option<&serde_json::Value>,
     required_type: &str,
     required_resource: &str,
 ) -> bool {
@@ -504,7 +504,7 @@ fn has_capability(
 
 async fn handle_calendar(headers: HeaderMap) -> axum::response::Response {
     match verify_token(&headers).await {
-        Ok(v) if has_capability(&v.granted_capabilities, "read", "calendar") => {
+        Ok(v) if has_capability(v.granted_capabilities.as_ref(), "read", "calendar") => {
             axum::Json(serde_json::json!({
                 "message": "Capability granted",
                 "data": {
@@ -533,7 +533,7 @@ async fn handle_calendar(headers: HeaderMap) -> axum::response::Response {
 
 async fn handle_files_write(headers: HeaderMap) -> axum::response::Response {
     match verify_token(&headers).await {
-        Ok(v) if has_capability(&v.granted_capabilities, "write", "files") => {
+        Ok(v) if has_capability(v.granted_capabilities.as_ref(), "write", "files") => {
             axum::Json(serde_json::json!({
                 "message": "Capability granted",
                 "data": {"file_id": "f-001", "status": "uploaded"}
@@ -557,7 +557,7 @@ async fn handle_files_write(headers: HeaderMap) -> axum::response::Response {
 
 async fn handle_files_delete(headers: HeaderMap, Path(path): Path<String>) -> axum::response::Response {
     match verify_token(&headers).await {
-        Ok(v) if has_capability(&v.granted_capabilities, "delete", "files") => {
+        Ok(v) if has_capability(v.granted_capabilities.as_ref(), "delete", "files") => {
             axum::Json(serde_json::json!({
                 "message": "Capability granted",
                 "data": {"deleted": path}
@@ -581,7 +581,7 @@ async fn handle_files_delete(headers: HeaderMap, Path(path): Path<String>) -> ax
 
 async fn handle_payments(headers: HeaderMap) -> axum::response::Response {
     match verify_token(&headers).await {
-        Ok(v) if has_capability(&v.granted_capabilities, "transact", "payments") => {
+        Ok(v) if has_capability(v.granted_capabilities.as_ref(), "transact", "payments") => {
             axum::Json(serde_json::json!({
                 "message": "Capability granted",
                 "data": {"transaction_id": "tx-001", "status": "completed"}
