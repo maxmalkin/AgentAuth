@@ -75,7 +75,7 @@ cargo build --workspace
 cargo nextest run --workspace
 ```
 
-### Running the Services
+### Running Services
 
 The easiest way to run all services locally is with the dev runner script:
 
@@ -83,9 +83,9 @@ The easiest way to run all services locally is with the dev runner script:
 ./dev.sh
 ```
 
-This starts the registry, verifier, and approval UI in a single terminal with colored log output. Press Ctrl+C to stop all services.
+This starts the registry, verifier, and approval UI in a single terminal with colored log output.
 
-To run services individually:
+To run individually:
 
 ```bash
 # Start the registry service
@@ -119,12 +119,8 @@ agentauth/
 ├── load-tests/              # k6 load test scripts
 ├── chaos/                   # Chaos engineering experiments
 ├── deploy/
-│   ├── helm/                # Kubernetes Helm charts
-│   └── grafana/             # Grafana dashboards
-└── docs/
-    ├── threat-model.md      # Security threat model
-    ├── runbook.md           # Operations runbook
-    └── capacity-planning.md # Sizing guidelines
+    ├── helm/                # Kubernetes Helm charts
+    └── grafana/             # Grafana dashboards
 ```
 
 ## SDK Usage
@@ -172,32 +168,12 @@ headers = await client.authenticate_headers("service-provider-id", "POST", "/api
 
 ## Security
 
-AgentAuth is designed with security as a primary concern:
-
 - All signing keys stored in HSMs (AWS KMS, GCP Cloud KMS, Vault Transit)
 - DPoP sender-constraint prevents token theft
 - Nonce-based replay prevention
 - Constant-time cryptographic comparisons
 - Immutable audit log with hash chain integrity
 - WebAuthn/Passkey for human approval signing
-
-See [docs/threat-model.md](docs/threat-model.md) for the full threat model.
-
-## Performance
-
-Target performance characteristics:
-
-| Operation | Throughput | p99 Latency |
-|-----------|------------|-------------|
-| Token verification (warm) | 10,000 req/s | < 5ms |
-| Token verification (cold) | 1,000 req/s | < 20ms |
-| Token issuance | 500 req/s | < 50ms |
-
-## Documentation
-
-- [Threat Model](docs/threat-model.md) - Security analysis and mitigations
-- [Operations Runbook](docs/runbook.md) - Alert response procedures
-- [Capacity Planning](docs/capacity-planning.md) - Sizing and scaling guidelines
 
 ## License
 
