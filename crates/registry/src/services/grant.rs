@@ -43,6 +43,14 @@ impl GrantService {
             .await?
             .ok_or_else(|| RegistryError::AgentNotFound(agent_id.to_string()))?;
 
+        // Return existing pending grant if one exists (idempotent across restarts)
+        if let Some(existing) =
+            db::get_pending_grant_for_agent_sp(self.db.read_replica(), agent_id, service_provider_id)
+                .await?
+        {
+            return Self::row_to_grant(&existing);
+        }
+
         // Create grant
         let grant_id = GrantId::new();
         let now = Utc::now();
@@ -79,6 +87,11 @@ impl GrantService {
     pub async fn get_grant(&self, grant_id: &GrantId) -> Result<Option<CapabilityGrant>> {
         let row = db::get_grant(self.db.read_replica(), grant_id).await?;
         row.map(|r| Self::row_to_grant(&r)).transpose()
+    }
+
+    /// Get a grant by ID, returning the raw database row with joined names.
+    pub async fn get_grant_row(&self, grant_id: &GrantId) -> Result<Option<db::GrantRow>> {
+        db::get_grant(self.db.read_replica(), grant_id).await
     }
 
     /// Approve a grant.

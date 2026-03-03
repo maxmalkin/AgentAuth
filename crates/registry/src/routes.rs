@@ -21,6 +21,7 @@ pub fn create_router(state: AppState) -> Router {
         )
         .route("/.well-known/agentauth/keys", get(handlers::get_keys))
         // Agent endpoints
+        .route("/v1/agents", get(handlers::list_agents))
         .route("/v1/agents/register", post(handlers::register_agent))
         .route("/v1/agents/bootstrap", post(handlers::bootstrap_agent))
         .route("/v1/agents/:agent_id", get(handlers::get_agent))

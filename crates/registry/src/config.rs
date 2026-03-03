@@ -20,6 +20,17 @@ pub struct RegistryConfig {
     pub tokens: TokenConfig,
     /// Observability configuration.
     pub observability: ObservabilityConfig,
+    /// Demo mode configuration.
+    #[serde(default)]
+    pub demo: DemoConfig,
+}
+
+/// Demo mode configuration.
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct DemoConfig {
+    /// Whether to seed demo data on startup.
+    #[serde(default)]
+    pub enabled: bool,
 }
 
 /// Server configuration.
@@ -271,9 +282,13 @@ fn default_log_level() -> String {
 }
 
 impl RegistryConfig {
-    /// Load configuration from environment.
+    /// Load configuration from config file (optional) and environment variables.
+    ///
+    /// Loads `config.toml` if present, then applies environment variable overrides
+    /// with prefix `AGENTAUTH__` (e.g., `AGENTAUTH__SERVER__PORT=8080`).
     pub fn from_env() -> Result<Self, config::ConfigError> {
         config::Config::builder()
+            .add_source(config::File::with_name("config").required(false))
             .add_source(config::Environment::with_prefix("AGENTAUTH").separator("__"))
             .build()?
             .try_deserialize()

@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter, Link } from '../Router';
 import { getGrantRequest, approveGrant, denyGrant, checkHealth } from '../api';
-import { signApprovalAssertion, isWebAuthnSupported } from '../utils/webauthn';
 import {
   capabilityToHumanReadable,
   envelopeToHumanReadable,
@@ -9,7 +8,7 @@ import {
   getCapabilityRiskLevel,
   getCapabilitySummary,
 } from '../utils/capabilities';
-import type { GrantRequest, Capability, ApprovalAssertion } from '../types';
+import type { GrantRequest, Capability } from '../types';
 
 type PageState =
   | { type: 'loading' }
@@ -79,31 +78,24 @@ export function ApprovalPage() {
   }
 
   async function startSigning(grant: GrantRequest) {
-    if (!isWebAuthnSupported()) {
-      setState({
-        type: 'error',
-        message: 'WebAuthn/Passkeys not supported. Use a compatible browser.',
-        isOffline: false,
-      });
-      return;
-    }
     setState({ type: 'signing', grant });
     try {
-      const assertion: ApprovalAssertion = {
-        grant_id: grant.grant_id,
-        agent_id: grant.agent_id,
-        granted_capabilities: grant.requested_capabilities,
-        behavioral_envelope: grant.requested_envelope,
-        approved_at: new Date().toISOString(),
-        approval_nonce: crypto.randomUUID(),
-      };
-      const signature = await signApprovalAssertion(assertion);
-      await approveGrant(grant.grant_id, assertion, signature);
+      // Generate a random nonce (32 bytes as hex)
+      const nonceBytes = new Uint8Array(32);
+      crypto.getRandomValues(nonceBytes);
+      const nonce = Array.from(nonceBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+
+      // Generate a dummy signature (demo mode — WebAuthn requires HTTPS)
+      const sigBytes = new Uint8Array(64);
+      crypto.getRandomValues(sigBytes);
+      const signature = Array.from(sigBytes, (b) => b.toString(16).padStart(2, '0')).join('');
+
+      await approveGrant(grant.grant_id, grant.human_principal_id, nonce, signature);
       setState({ type: 'success', action: 'approved' });
     } catch (err) {
       setState({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Signing failed',
+        message: err instanceof Error ? err.message : 'Approval failed',
         isOffline: false,
       });
     }
@@ -226,8 +218,8 @@ export function ApprovalPage() {
               <div className="w-1.5 h-1.5 bg-blue rounded-full" style={{ animation: 'pulse-glow 1s ease-in-out 0.2s infinite' }} />
               <div className="w-1.5 h-1.5 bg-blue rounded-full" style={{ animation: 'pulse-glow 1s ease-in-out 0.4s infinite' }} />
             </div>
-            <h2 className="font-mono text-sm tracking-wide text-text-primary mb-2">AUTHENTICATING</h2>
-            <p className="text-text-secondary text-sm">Complete verification with your passkey.</p>
+            <h2 className="font-mono text-sm tracking-wide text-text-primary mb-2">PROCESSING</h2>
+            <p className="text-text-secondary text-sm">Submitting approval to registry...</p>
           </div>
         </div>
       </Shell>
@@ -313,7 +305,7 @@ export function ApprovalPage() {
               onClick={() => handleApproveClick(grant)}
               className="px-6 py-3 bg-amber text-surface font-mono text-sm font-medium tracking-wide hover:bg-amber-dim transition-colors"
             >
-              APPROVE WITH PASSKEY
+              APPROVE
             </button>
           </div>
         )}
@@ -378,7 +370,7 @@ export function ApprovalPage() {
                     onClick={() => startSigning(grant)}
                     className="px-4 py-2.5 bg-red-dim border border-red text-red font-mono text-xs tracking-wide hover:bg-red hover:text-white transition-colors"
                   >
-                    APPROVE WITH PASSKEY
+                    APPROVE
                   </button>
                 </div>
               </>

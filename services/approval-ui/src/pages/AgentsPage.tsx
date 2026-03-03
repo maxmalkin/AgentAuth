@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from '../Router';
+import { Link, useRouter } from '../Router';
 import { listAgents, checkHealth } from '../api';
 import type { AgentSummary } from '../types';
 
@@ -122,6 +122,7 @@ export function AgentsPage() {
 }
 
 function AgentRow({ agent }: { agent: AgentSummary }) {
+  const { navigate } = useRouter();
   const statusConfig = {
     active: { color: 'bg-green', text: 'text-green', label: 'ACTIVE' },
     suspended: { color: 'bg-amber', text: 'text-amber', label: 'SUSPENDED' },
@@ -131,16 +132,16 @@ function AgentRow({ agent }: { agent: AgentSummary }) {
   const status = statusConfig[agent.status];
 
   return (
-    <Link
-      to={`/agents/${agent.agent_id}/activity`}
-      className="block border border-border bg-panel hover:bg-panel-hover hover:border-border-bright transition-all group"
-    >
+    <div className="border border-border bg-panel hover:bg-panel-hover hover:border-border-bright transition-all group">
       <div className="px-4 py-4 flex items-center gap-4">
         {/* Status indicator */}
         <div className={`w-2 h-2 ${status.color} shrink-0`} />
 
-        {/* Agent info */}
-        <div className="flex-1 min-w-0">
+        {/* Agent info — clickable area navigates to detail */}
+        <button
+          onClick={() => navigate(`/agents/${agent.agent_id}/activity`)}
+          className="flex-1 min-w-0 text-left"
+        >
           <div className="flex items-center gap-3 mb-1">
             <span className="text-sm font-medium text-text-primary group-hover:text-amber transition-colors truncate">
               {agent.name}
@@ -148,9 +149,14 @@ function AgentRow({ agent }: { agent: AgentSummary }) {
             <span className={`font-mono text-[10px] tracking-wide ${status.text}`}>
               {status.label}
             </span>
+            {agent.pending_grant_id && (
+              <span className="font-mono text-[10px] tracking-wide text-amber border border-amber-dim px-1.5 py-0.5 bg-amber-glow animate-pulse">
+                PENDING APPROVAL
+              </span>
+            )}
           </div>
           <div className="font-mono text-[11px] text-text-muted truncate">{agent.agent_id}</div>
-        </div>
+        </button>
 
         {/* Grants count */}
         <div className="text-right shrink-0">
@@ -158,11 +164,20 @@ function AgentRow({ agent }: { agent: AgentSummary }) {
           <div className="font-mono text-[10px] text-text-muted">GRANTS</div>
         </div>
 
-        {/* Arrow */}
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-text-muted group-hover:text-amber transition-colors shrink-0">
-          <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
+        {/* Approve button (pending) or arrow (normal) */}
+        {agent.pending_grant_id ? (
+          <Link
+            to={`/approve/${agent.pending_grant_id}`}
+            className="px-3 py-1.5 bg-amber text-surface font-mono text-[10px] tracking-wide hover:bg-amber-dim transition-colors shrink-0"
+          >
+            APPROVE
+          </Link>
+        ) : (
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-text-muted group-hover:text-amber transition-colors shrink-0">
+            <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        )}
       </div>
-    </Link>
+    </div>
   );
 }

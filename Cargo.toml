@@ -9,6 +9,7 @@ members = [
     "services/registry",
     "services/verifier",
     "services/audit-archiver",
+    "services/demo-agent",
     "tests/compliance",
     "tests/integration",
     "tests/stability",
@@ -63,7 +64,7 @@ base64 = "0.22"
 hex = "0.4"
 
 # UUID
-uuid = { version = "1.7", features = ["v7", "serde"] }
+uuid = { version = "1.7", features = ["v5", "v7", "serde"] }
 
 # Time
 chrono = { version = "0.4", features = ["serde"] }

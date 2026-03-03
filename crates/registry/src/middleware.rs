@@ -87,6 +87,9 @@ pub async fn logging_middleware(request: Request, next: Next) -> Response {
 }
 
 /// CORS middleware configuration.
+///
+/// In local dev the approval UI runs on a different port, so we must allow
+/// its origin explicitly and enable credentials for CSRF cookie handling.
 pub fn cors_layer() -> tower_http::cors::CorsLayer {
     tower_http::cors::CorsLayer::new()
         .allow_methods([
@@ -99,9 +102,14 @@ pub fn cors_layer() -> tower_http::cors::CorsLayer {
             axum::http::header::CONTENT_TYPE,
             axum::http::header::AUTHORIZATION,
             axum::http::header::HeaderName::from_static("x-request-id"),
+            axum::http::header::HeaderName::from_static("x-csrf-token"),
             axum::http::header::HeaderName::from_static("agentdpop"),
         ])
-        .allow_origin(tower_http::cors::Any)
+        .allow_origin([
+            axum::http::HeaderValue::from_static("http://localhost:3001"),
+            axum::http::HeaderValue::from_static("http://localhost:3000"),
+        ])
+        .allow_credentials(true)
         .max_age(std::time::Duration::from_secs(3600))
 }
 

@@ -1,12 +1,12 @@
 // AgentAuth Approval UI Types
 
-/** Capability types matching the Rust enum */
+/** Capability types matching the Rust enum (serde rename_all = "snake_case") */
 export type Capability =
-  | { type: 'Read'; resource: string; filter: string | null }
-  | { type: 'Write'; resource: string; conditions: Record<string, string> | null }
-  | { type: 'Transact'; resource: string; max_value: number }
-  | { type: 'Delete'; resource: string; filter: string | null }
-  | { type: 'Custom'; namespace: string; name: string; params: Record<string, string> };
+  | { type: 'read'; resource: string; filter: string | null }
+  | { type: 'write'; resource: string; conditions: Record<string, string> | null }
+  | { type: 'transact'; resource: string; max_value: number }
+  | { type: 'delete'; resource: string; filter: string | null }
+  | { type: 'custom'; namespace: string; name: string; params: Record<string, string> };
 
 /** Behavioral envelope constraints */
 export interface BehavioralEnvelope {
@@ -34,6 +34,7 @@ export interface GrantRequest {
   agent_name: string;
   service_provider_id: string;
   service_provider_name: string;
+  human_principal_id: string;
   requested_capabilities: Capability[];
   requested_envelope: BehavioralEnvelope;
   created_at: string;
@@ -48,6 +49,7 @@ export interface AgentSummary {
   registered_at: string;
   status: 'active' | 'suspended' | 'revoked';
   active_grants: number;
+  pending_grant_id?: string;
 }
 
 /** Agent details */
@@ -67,7 +69,7 @@ export interface GrantSummary {
   service_provider_name: string;
   capabilities: Capability[];
   created_at: string;
-  status: 'active' | 'revoked' | 'expired';
+  status: string;
 }
 
 /** Audit event */

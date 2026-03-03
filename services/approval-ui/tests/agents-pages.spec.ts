@@ -33,16 +33,16 @@ const mockAgentDetails: AgentDetails = {
   registered_at: '2024-01-15T10:00:00Z',
   public_key: 'MCowBQYDK2VwAyEAz1234567890abcdefghijklmnopqrstuvwxyz12345678',
   capabilities: [
-    { type: 'Read', resource: 'calendar', filter: null },
-    { type: 'Write', resource: 'calendar', conditions: null },
+    { type: 'read', resource: 'calendar', filter: null },
+    { type: 'write', resource: 'calendar', conditions: null },
   ],
   grants: [
     {
       grant_id: 'grant_01JTEST123456789012345678',
       service_provider_name: 'Calendar Service',
       capabilities: [
-        { type: 'Read', resource: 'calendar', filter: null },
-        { type: 'Write', resource: 'calendar', conditions: null },
+        { type: 'read', resource: 'calendar', filter: null },
+        { type: 'write', resource: 'calendar', conditions: null },
       ],
       status: 'active',
       created_at: '2024-01-15T11:00:00Z',
@@ -51,7 +51,7 @@ const mockAgentDetails: AgentDetails = {
       grant_id: 'grant_01JTEST123456789012345679',
       service_provider_name: 'Email Service',
       capabilities: [
-        { type: 'Read', resource: 'emails', filter: 'unread' },
+        { type: 'read', resource: 'emails', filter: 'unread' },
       ],
       status: 'active',
       created_at: '2024-01-16T09:00:00Z',
@@ -65,7 +65,7 @@ const mockAuditEvents: AuditEvent[] = [
     event_type: 'token_verified',
     agent_id: 'agent_01JTEST123456789012345678',
     service_provider_id: 'sp_calendar',
-    capability: { type: 'Read', resource: 'calendar', filter: null },
+    capability: { type: 'read', resource: 'calendar', filter: null },
     outcome: 'allowed',
     created_at: '2024-03-15T10:30:00Z',
     details: {},
@@ -75,7 +75,7 @@ const mockAuditEvents: AuditEvent[] = [
     event_type: 'token_denied',
     agent_id: 'agent_01JTEST123456789012345678',
     service_provider_id: 'sp_calendar',
-    capability: { type: 'Delete', resource: 'calendar', filter: null },
+    capability: { type: 'delete', resource: 'calendar', filter: null },
     outcome: 'denied',
     created_at: '2024-03-15T10:25:00Z',
     details: { reason: 'Capability not granted' },

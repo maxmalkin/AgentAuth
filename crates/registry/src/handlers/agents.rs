@@ -33,31 +33,54 @@ pub struct RegisterAgentResponse {
     pub status: String,
 }
 
-/// Agent details response.
+/// Agent details response (matches UI AgentDetails type).
 #[derive(Debug, Serialize)]
 pub struct AgentResponse {
-    /// Agent ID.
+    /// Agent ID (also emitted as `agent_id` for compatibility).
     pub id: Uuid,
-    /// Human principal ID.
-    pub human_principal_id: Uuid,
+    /// Alias for `id`.
+    pub agent_id: Uuid,
     /// Agent name.
     pub name: String,
+    /// When the agent was registered.
+    pub registered_at: String,
+    /// Current status string.
+    pub status: String,
+    /// Whether the agent is active (convenience boolean).
+    pub is_active: bool,
+    /// Public key (hex encoded).
+    pub public_key: String,
+    /// Requested capabilities.
+    pub capabilities: Vec<Capability>,
+    /// Active grants for this agent.
+    pub grants: Vec<GrantSummaryResponse>,
+    /// Human principal ID.
+    pub human_principal_id: Uuid,
     /// Description.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    /// Public key (hex encoded).
-    pub public_key: String,
     /// Key ID.
     pub key_id: String,
-    /// Requested capabilities.
-    pub requested_capabilities: Vec<Capability>,
     /// Default behavioral envelope.
     pub default_behavioral_envelope: BehavioralEnvelope,
     /// Model origin.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub model_origin: Option<String>,
-    /// Is active.
-    pub is_active: bool,
+}
+
+/// Grant summary within agent details.
+#[derive(Debug, Serialize)]
+pub struct GrantSummaryResponse {
+    /// Grant ID.
+    pub grant_id: Uuid,
+    /// Service provider name.
+    pub service_provider_name: String,
+    /// Granted capabilities.
+    pub capabilities: Vec<Capability>,
+    /// When the grant was created.
+    pub created_at: String,
+    /// Grant status.
+    pub status: String,
 }
 
 /// Bootstrap request for OTP-based provisioning.
@@ -182,6 +205,51 @@ pub async fn bootstrap_agent(
     ))
 }
 
+/// Agent summary for list endpoint.
+#[derive(Debug, Serialize)]
+pub struct AgentSummaryResponse {
+    /// Agent ID.
+    pub agent_id: Uuid,
+    /// Agent display name.
+    pub name: String,
+    /// When the agent was registered.
+    pub registered_at: String,
+    /// Current status (active/revoked).
+    pub status: String,
+    /// Number of active grants.
+    pub active_grants: i64,
+    /// Most recent pending grant ID (if any), for direct approve link.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pending_grant_id: Option<Uuid>,
+}
+
+/// List all agents.
+///
+/// GET /v1/agents
+pub async fn list_agents(
+    State(state): State<AppState>,
+) -> Result<impl IntoResponse> {
+    let rows = db::list_agents(state.db.read_replica()).await?;
+
+    let mut summaries = Vec::with_capacity(rows.len());
+    for row in &rows {
+        let agent_id = AgentId::from_uuid(row.id);
+        let grant_count = db::count_active_grants(state.db.read_replica(), &agent_id).await.unwrap_or(0);
+        let pending_grant_id = db::get_pending_grant_id(state.db.read_replica(), &agent_id).await.unwrap_or(None);
+        let status = if row.is_active { "active" } else { "revoked" };
+        summaries.push(AgentSummaryResponse {
+            agent_id: row.id,
+            name: row.name.clone(),
+            registered_at: row.created_at.to_rfc3339(),
+            status: status.to_string(),
+            active_grants: grant_count,
+            pending_grant_id,
+        });
+    }
+
+    Ok(Json(summaries))
+}
+
 /// Get agent details.
 ///
 /// GET /v1/agents/:agent_id
@@ -195,7 +263,9 @@ pub async fn get_agent(
         .await?
         .ok_or_else(|| RegistryError::AgentNotFound(agent_id.to_string()))?;
 
-    let response = row_to_response(&row)?;
+    let grant_rows = db::list_grants_for_agent(state.db.read_replica(), &agent_id).await?;
+
+    let response = row_to_response(&row, &grant_rows)?;
 
     Ok(Json(response))
 }
@@ -230,7 +300,7 @@ pub async fn delete_agent(
 }
 
 /// Convert database row to response.
-fn row_to_response(row: &AgentRow) -> Result<AgentResponse> {
+fn row_to_response(row: &AgentRow, grant_rows: &[db::GrantRow]) -> Result<AgentResponse> {
     let capabilities: Vec<Capability> = serde_json::from_value(row.requested_capabilities.clone())
         .map_err(|e| RegistryError::Internal(format!("failed to parse capabilities: {e}")))?;
 
@@ -238,22 +308,44 @@ fn row_to_response(row: &AgentRow) -> Result<AgentResponse> {
         serde_json::from_value(row.default_behavioral_envelope.clone())
             .map_err(|e| RegistryError::Internal(format!("failed to parse envelope: {e}")))?;
 
+    let status = if row.is_active { "active" } else { "revoked" };
+
+    let grants = grant_rows
+        .iter()
+        .filter_map(|g| {
+            let caps: Vec<Capability> =
+                serde_json::from_value(g.granted_capabilities.clone()).ok()?;
+            Some(GrantSummaryResponse {
+                grant_id: g.id,
+                service_provider_name: g.service_provider_name.clone(),
+                capabilities: caps,
+                created_at: g.requested_at.to_rfc3339(),
+                status: g.status.clone(),
+            })
+        })
+        .collect();
+
     Ok(AgentResponse {
         id: row.id,
-        human_principal_id: row.human_principal_id,
+        agent_id: row.id,
         name: row.name.clone(),
-        description: row.description.clone(),
+        registered_at: row.created_at.to_rfc3339(),
+        status: status.to_string(),
+        is_active: row.is_active,
         public_key: hex::encode(&row.public_key),
+        capabilities,
+        grants,
+        human_principal_id: row.human_principal_id,
+        description: row.description.clone(),
         key_id: row.key_id.clone(),
-        requested_capabilities: capabilities,
         default_behavioral_envelope: envelope,
         model_origin: row.model_origin.clone(),
-        is_active: row.is_active,
     })
 }
 
-/// Hex serialization helper.
+/// Base64url serialization helper (matches SignedManifest.signature encoding).
 mod hex_serde {
+    use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
     use serde::{Deserialize, Deserializer};
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
@@ -261,6 +353,16 @@ mod hex_serde {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        hex::decode(&s).map_err(serde::de::Error::custom)
+        // Accept base64url (SDK/SignedManifest format) or hex (test/legacy).
+        // A valid Ed25519 signature is exactly 64 bytes — use the length to
+        // disambiguate, because a 128-char hex string is accidentally valid
+        // base64url (decodes to 96 bytes, not 64).
+        let decoded = URL_SAFE_NO_PAD
+            .decode(&s)
+            .ok()
+            .filter(|b| b.len() == 64)
+            .or_else(|| hex::decode(&s).ok().filter(|b| b.len() == 64))
+            .ok_or_else(|| serde::de::Error::custom("expected base64url or hex encoded ed25519 signature (64 bytes)"))?;
+        Ok(decoded)
     }
 }

@@ -9,7 +9,7 @@ import type {
   ApiError,
 } from './types';
 
-const REGISTRY_URL = process.env.REGISTRY_URL || 'http://localhost:8080';
+const REGISTRY_URL = 'http://localhost:8080';
 
 /** CSRF token stored in memory and synced with cookie */
 let csrfToken: string | null = null;
@@ -111,14 +111,16 @@ export async function getGrantRequest(grantId: string): Promise<GrantRequest> {
 /** Submit approval for a grant */
 export async function approveGrant(
   grantId: string,
-  assertion: ApprovalAssertion,
-  signature: string
+  approvedBy: string,
+  approvalNonce: string,
+  approvalSignature: string
 ): Promise<void> {
   await request(`/v1/grants/${grantId}/approve`, {
     method: 'POST',
     body: JSON.stringify({
-      assertion,
-      human_signature: signature,
+      approved_by: approvedBy,
+      approval_nonce: approvalNonce,
+      approval_signature: approvalSignature,
     }),
   });
 }

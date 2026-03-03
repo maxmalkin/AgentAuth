@@ -95,9 +95,9 @@ impl TestApp {
             .try_init();
 
         let db_url = std::env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "postgres://agentauth:agentauth@localhost:5434/agentauth".into());
+            .unwrap_or_else(|_| "postgres://agentauth:agentauth_dev@localhost:5434/agentauth".into());
         let redis_url =
-            std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6399".into());
+            std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6380".into());
 
         // Connect to PostgreSQL and run migrations
         let db_pool = PgPool::connect(&db_url)
@@ -187,6 +187,7 @@ impl TestApp {
                 service_name: "test-registry".into(),
                 log_level: "warn".into(),
             },
+            demo: Default::default(),
         };
 
         // Build services

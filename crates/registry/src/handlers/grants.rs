@@ -1,5 +1,6 @@
 //! Grant management handlers.
 
+use crate::db::GrantRow;
 use crate::error::{RegistryError, Result};
 use crate::services::{AuditEvent, AuditEventType};
 use crate::state::AppState;
@@ -21,27 +22,43 @@ pub struct RequestGrantRequest {
     pub agent_id: Uuid,
     /// Service provider ID.
     pub service_provider_id: Uuid,
-    /// Requested capabilities.
+    /// Requested capabilities (also accepted as `requested_capabilities` from SDK).
+    #[serde(alias = "requested_capabilities")]
     pub capabilities: Vec<Capability>,
-    /// Behavioral envelope.
+    /// Behavioral envelope (also accepted as `requested_envelope` from SDK).
+    #[serde(alias = "requested_envelope")]
     pub behavioral_envelope: BehavioralEnvelope,
 }
 
 /// Grant response.
 #[derive(Debug, Serialize)]
 pub struct GrantResponse {
-    /// Grant ID.
+    /// Grant ID (also emitted as `grant_id` for UI compatibility).
     pub id: Uuid,
+    /// Alias for `id` — used by the approval UI.
+    pub grant_id: Uuid,
     /// Agent ID.
     pub agent_id: Uuid,
+    /// Agent display name.
+    pub agent_name: String,
     /// Service provider ID.
     pub service_provider_id: Uuid,
-    /// Granted capabilities.
+    /// Service provider display name.
+    pub service_provider_name: String,
+    /// Granted capabilities (also emitted as `requested_capabilities`).
     pub granted_capabilities: Vec<Capability>,
-    /// Behavioral envelope.
+    /// Alias for `granted_capabilities` — used by the approval UI.
+    pub requested_capabilities: Vec<Capability>,
+    /// Behavioral envelope (also emitted as `requested_envelope`).
     pub behavioral_envelope: BehavioralEnvelope,
+    /// Alias for `behavioral_envelope` — used by the approval UI.
+    pub requested_envelope: BehavioralEnvelope,
+    /// Human principal who owns this agent.
+    pub human_principal_id: Uuid,
     /// Grant status.
     pub status: String,
+    /// When the grant was requested.
+    pub created_at: DateTime<Utc>,
     /// Approved by (human principal ID).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub approved_by: Option<Uuid>,
@@ -115,13 +132,13 @@ pub async fn get_grant(
 ) -> Result<impl IntoResponse> {
     let grant_id = GrantId::from_uuid(grant_id);
 
-    let grant = state
+    let row = state
         .grants
-        .get_grant(&grant_id)
+        .get_grant_row(&grant_id)
         .await?
         .ok_or_else(|| RegistryError::GrantNotFound(grant_id.to_string()))?;
 
-    Ok(Json(grant_to_response(&grant)))
+    Ok(Json(grant_row_to_response(&row)?))
 }
 
 /// Approve a grant.
@@ -217,21 +234,38 @@ pub async fn revoke_grant(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Convert grant to response.
+/// Convert grant to response (with names defaulting to empty — used for create/approve/deny).
 fn grant_to_response(grant: &CapabilityGrant) -> GrantResponse {
-    // Extract approved_by from the approval assertion if present
+    grant_to_response_with_names(grant, String::new(), String::new())
+}
+
+/// Convert grant to response with agent and service provider names.
+fn grant_to_response_with_names(
+    grant: &CapabilityGrant,
+    agent_name: String,
+    service_provider_name: String,
+) -> GrantResponse {
     let approved_by = grant
         .approval_assertion
         .as_ref()
         .map(|_| grant.human_principal_id.0);
 
+    let id = *grant.id.as_uuid();
+
     GrantResponse {
-        id: *grant.id.as_uuid(),
+        id,
+        grant_id: id,
         agent_id: *grant.agent_id.as_uuid(),
+        agent_name,
         service_provider_id: grant.service_provider_id.0,
+        service_provider_name,
+        human_principal_id: grant.human_principal_id.0,
         granted_capabilities: grant.requested_capabilities.clone(),
+        requested_capabilities: grant.requested_capabilities.clone(),
         behavioral_envelope: grant.requested_envelope.clone(),
+        requested_envelope: grant.requested_envelope.clone(),
         status: status_to_string(grant.status),
+        created_at: grant.created_at,
         approved_by,
         approved_at: grant.approved_at,
         expires_at: Some(grant.expires_at),
@@ -247,6 +281,38 @@ fn status_to_string(status: GrantStatus) -> String {
         GrantStatus::Revoked => "revoked".to_string(),
         GrantStatus::Expired => "expired".to_string(),
     }
+}
+
+/// Convert a database grant row directly to a response (includes joined names).
+fn grant_row_to_response(row: &GrantRow) -> Result<GrantResponse> {
+    let capabilities: Vec<Capability> =
+        serde_json::from_value(row.granted_capabilities.clone()).map_err(|e| {
+            RegistryError::Internal(format!("failed to parse capabilities: {e}"))
+        })?;
+
+    let envelope: BehavioralEnvelope =
+        serde_json::from_value(row.behavioral_envelope.clone()).map_err(|e| {
+            RegistryError::Internal(format!("failed to parse envelope: {e}"))
+        })?;
+
+    Ok(GrantResponse {
+        id: row.id,
+        grant_id: row.id,
+        agent_id: row.agent_id,
+        agent_name: row.agent_name.clone(),
+        service_provider_id: row.service_provider_id,
+        service_provider_name: row.service_provider_name.clone(),
+        human_principal_id: row.human_principal_id,
+        granted_capabilities: capabilities.clone(),
+        requested_capabilities: capabilities,
+        behavioral_envelope: envelope.clone(),
+        requested_envelope: envelope,
+        status: row.status.clone(),
+        created_at: row.requested_at,
+        approved_by: row.approved_by,
+        approved_at: row.decided_at,
+        expires_at: Some(row.expires_at),
+    })
 }
 
 /// Hex serialization helper.

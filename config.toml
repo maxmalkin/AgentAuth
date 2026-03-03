@@ -1,0 +1,56 @@
+# AgentAuth Registry — Local Development Configuration
+#
+# This file is loaded automatically by the registry service.
+# Environment variables with prefix AGENTAUTH__ override these values.
+
+[server]
+host = "0.0.0.0"
+port = 8080
+metrics_port = 9091
+shutdown_timeout_secs = 5
+external_url = "http://localhost:8080"
+verifier_url = "http://localhost:8081"
+approval_ui_url = "http://localhost:3001"
+
+[database]
+primary_url = "postgres://agentauth:agentauth_dev@localhost:5434/agentauth"
+replica_urls = []
+max_connections = 16
+connect_timeout_secs = 5
+query_timeout_secs = 5
+
+[redis]
+urls = ["redis://localhost:6380"]
+timeout_secs = 2
+token_cache_prefix = "token:"
+nonce_store_prefix = "nonce:"
+rate_limit_prefix = "rl:"
+
+[kms]
+signing_key_id = "dev-signing-key"
+timeout_secs = 5
+
+# EncryptedKeyfile
+[kms.backend]
+encrypted_keyfile = { path = "/dev/null" }
+
+[grants]
+max_pending_per_agent = 5
+expiry_secs = 3600
+cooldown_multiplier = 4.0
+initial_cooldown_secs = 3600
+max_cooldown_secs = 86400
+max_requests_per_minute = 60
+max_burst = 10
+
+[tokens]
+lifetime_secs = 900
+idempotency_window_secs = 900
+revocation_propagation_ms = 100
+
+[observability]
+service_name = "agentauth-registry"
+log_level = "info"
+
+[demo]
+enabled = true
