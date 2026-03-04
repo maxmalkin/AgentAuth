@@ -6,9 +6,9 @@
 
 Human-in-the-loop authorization for AI agents. Every tool call is cryptographically signed, scoped to what a human approved, and written to an immutable audit log.
 
-## Try it with Claude Desktop in 5 minutes
+## Claude Desktop
 
-The fastest way to see AgentAuth in action is with the included MCP server. It connects Claude Desktop to the AgentAuth stack so every tool call Claude makes is authenticated and human-approved.
+The fastest way to see AgentAuth in action is with the included example MCP server.
 
 **Prerequisites:** [Bun](https://bun.sh), [Rust](https://rustup.rs), [Docker](https://docs.docker.com/get-docker/)
 
@@ -70,8 +70,6 @@ Now ask Claude to use the tools:
 
 State is saved at `~/.config/agentauth-mcp/state.json`. Subsequent runs start immediately without re-approval.
 
-For full MCP documentation see [`services/agentauth-mcp/README.md`](services/agentauth-mcp/README.md).
-
 ---
 
 ## What AgentAuth enforces
@@ -118,28 +116,9 @@ AgentAuth/
 │   ├── core/                # Protocol types, crypto (no I/O)
 │   ├── registry/            # Registry service logic
 │   └── sdk/                 # Rust agent SDK
-├── migrations/              # SQLx database migrations
+├── migrations/              # Database migrations
 ├── tests/integration/       # End-to-end tests
 └── dev.sh                   # Start all services locally
-```
-
----
-
-## Building from source
-
-```bash
-# Prerequisites
-cargo install cargo-nextest sqlx-cli
-
-# Start dependencies
-docker-compose up -d
-sqlx migrate run
-
-# Build all Rust crates
-cargo build --workspace
-
-# Run tests
-cargo nextest run --workspace
 ```
 
 ---
@@ -157,7 +136,7 @@ The core pattern:
 5. Send `Authorization: AgentBearer <token>` and `AgentDPoP: <proof>` on every request to your service
 6. Your service calls `/v1/tokens/verify` to check the token and capability
 
-See [`services/agentauth-mcp/README.md`](services/agentauth-mcp/README.md) for the full implementation details including the Ed25519 canonical bytes format, DPoP proof structure, and token caching strategy.
+See [`services/agentauth-mcp/README.md`](services/agentauth-mcp/README.md) for the full implementation details.
 
 ---
 
