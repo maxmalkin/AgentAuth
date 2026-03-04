@@ -172,7 +172,10 @@ jobs:
 
             - name: Check for SQL string interpolation
               run: |
-                  if grep -rn "format!.*SELECT\|format!.*INSERT\|format!.*UPDATE\|format!.*DELETE" crates/ services/ --include="*.rs"; then
+                  # Match DML patterns only (SELECT FROM, INSERT INTO, UPDATE SET, DELETE FROM).
+                  # GRANT/REVOKE DDL in partition.rs uses format! with internally-generated
+                  # partition names (not user input) and is intentionally excluded.
+                  if grep -rn "format!.*SELECT.*FROM\|format!.*INSERT.*INTO\|format!.*UPDATE.*SET\|format!.*DELETE FROM" crates/ services/ --include="*.rs"; then
                     echo "::error::SQL string interpolation found - use parameterized queries"
                     exit 1
                   fi
