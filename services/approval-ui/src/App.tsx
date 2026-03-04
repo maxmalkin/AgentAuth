@@ -83,17 +83,40 @@ function HomePage() {
 					</div>
 
 					<p className="text-text-primary text-base mb-2 max-w-xl">
-						Human-in-the-loop authorization for AI agents.
+						Let Claude call your tools. With human approval.
 					</p>
-					<p className="text-text-secondary text-sm mb-8 max-w-xl leading-relaxed">
-						Every tool call your agent makes is cryptographically signed, human-approved, and verified in real time — with a full audit trail.
+					<p className="text-text-secondary text-sm mb-6 max-w-xl leading-relaxed">
+						Drop the <span className="text-text-primary font-mono">agentauth-mcp</span> server into Claude Desktop and every tool call becomes cryptographically signed, scoped to what you approved, and written to an immutable audit log.
 					</p>
+
+					{/* MCP feature strip */}
+					<div className="bg-panel border border-border px-4 py-3 font-mono text-xs mb-8 max-w-xl">
+						<div className="flex items-center gap-2 text-text-muted mb-1">
+							<span className="text-amber">agentauth-mcp</span>
+							<span>·</span>
+							<span>Claude Desktop MCP server</span>
+						</div>
+						<div className="flex flex-wrap gap-x-4 gap-y-1 text-text-muted">
+							<span><span className="text-green">✓</span> Ed25519 signed manifests</span>
+							<span><span className="text-green">✓</span> DPoP token binding</span>
+							<span><span className="text-green">✓</span> Human-approved capability grants</span>
+						</div>
+					</div>
 
 					{/* Primary actions */}
 					<div className="flex flex-col sm:flex-row gap-3">
+						<a
+							href="#quickstart"
+							className="inline-flex items-center gap-2 px-6 py-3 bg-amber text-surface font-mono text-sm font-medium tracking-wide hover:bg-amber-dim transition-colors"
+						>
+							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+								<path d="M4 8H12M9 5L12 8L9 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square"/>
+							</svg>
+							RUN THE DEMO
+						</a>
 						<Link
 							to="/agents"
-							className="inline-flex items-center gap-2 px-6 py-3 bg-amber text-surface font-mono text-sm font-medium tracking-wide hover:bg-amber-dim transition-colors"
+							className="inline-flex items-center gap-2 px-6 py-3 border border-border text-text-secondary font-mono text-sm font-medium tracking-wide hover:border-amber hover:text-amber transition-colors"
 						>
 							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
 								<rect x="2" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
@@ -113,6 +136,99 @@ function HomePage() {
 							</svg>
 							DASHBOARD
 						</Link>
+					</div>
+				</div>
+			</div>
+
+			{/* ── Quick start ──────────────────────────────────────── */}
+			<div id="quickstart" className="border-b border-border">
+				<div className="max-w-5xl mx-auto px-6 py-14">
+					<SectionTag>QUICK START</SectionTag>
+					<p className="text-text-secondary text-sm mb-8 max-w-xl leading-relaxed">
+						Start the AgentAuth stack, run the MCP server, approve the grant, connect Claude Desktop. Five minutes end to end.
+					</p>
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+						<div>
+							<div className="font-mono text-sm text-text-primary mb-3">1 — Start the stack</div>
+							<CodeBlock>
+								<Prompt>git clone https://github.com/maxmalkin/AgentAuth</Prompt>
+								<Prompt>cd AgentAuth && ./dev.sh</Prompt>
+								<div className="mt-2">
+									<C># registry      http://localhost:8080</C><br />
+									<C># verifier      http://localhost:8081</C><br />
+									<C># approval UI   http://localhost:3001</C><br />
+									<C># mock service  http://localhost:9090</C>
+								</div>
+							</CodeBlock>
+						</div>
+
+						<div>
+							<div className="font-mono text-sm text-text-primary mb-3">2 — Run the MCP server</div>
+							<CodeBlock>
+								<Prompt>cd services/agentauth-mcp</Prompt>
+								<Prompt>bun run index.ts</Prompt>
+								<div className="mt-2 text-text-secondary">
+									[agentauth-mcp] Registered with registry<br />
+									[agentauth-mcp] Approve this agent at:<br />
+									[agentauth-mcp]   <span className="text-amber">http://localhost:3001/approve/…</span><br />
+									[agentauth-mcp] Waiting for approval…
+								</div>
+							</CodeBlock>
+						</div>
+
+						<div>
+							<div className="font-mono text-sm text-text-primary mb-3">3 — Approve the grant</div>
+							<p className="text-text-secondary text-xs leading-relaxed mb-3">
+								Open the approval URL printed above. Review the capabilities the agent is requesting, then click <strong className="text-text-primary font-mono">APPROVE GRANT</strong>. The agent will start immediately.
+							</p>
+							<Link
+								to="/agents"
+								className="inline-flex items-center gap-2 px-4 py-2 border border-border text-text-secondary font-mono text-xs hover:border-amber hover:text-amber transition-colors"
+							>
+								<svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+									<rect x="2" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
+									<rect x="9" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
+									<rect x="2" y="9" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
+									<rect x="9" y="9" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
+								</svg>
+								GO TO AGENTS
+							</Link>
+						</div>
+
+						<div>
+							<div className="font-mono text-sm text-text-primary mb-3">4 — Connect Claude Desktop</div>
+							<p className="text-text-secondary text-xs leading-relaxed mb-3">
+								Add to <span className="text-text-primary font-mono">claude_desktop_config.json</span> and restart Claude:
+							</p>
+							<CodeBlock>
+								<span className="text-text-muted">{"{"}</span><br />
+								&nbsp;&nbsp;<span className="text-blue">"mcpServers"</span>: {"{"}<br />
+								&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-blue">"agentauth"</span>: {"{"}<br />
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-blue">"command"</span>: <span className="text-green">"bun"</span>,<br />
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-blue">"args"</span>: [<span className="text-green">"/path/to/agentauth-mcp/index.ts"</span>],<br />
+								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-blue">"env"</span>: {"{"} <span className="text-blue">"REGISTRY_URL"</span>: <span className="text-green">"http://localhost:8080"</span> {"}"}<br />
+								&nbsp;&nbsp;&nbsp;&nbsp;{"}"}<br />
+								&nbsp;&nbsp;{"}"}<br />
+								<span className="text-text-muted">{"}"}</span>
+							</CodeBlock>
+						</div>
+
+						<div className="md:col-span-2">
+							<div className="font-mono text-sm text-text-primary mb-3">5 — Ask Claude to use your tools</div>
+							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+								{[
+									{ prompt: '"Read my calendar"', note: "→ calls read_calendar · read/calendar token" },
+									{ prompt: '"Write a file called test.txt"', note: "→ calls write_file · write/files token" },
+									{ prompt: '"Send a payment of $100"', note: "→ 403 denied — transact not in grant" },
+								].map(({ prompt, note }) => (
+									<div key={prompt} className="bg-panel border border-border p-3">
+										<div className="font-mono text-xs text-text-primary mb-1">{prompt}</div>
+										<div className="font-mono text-xs text-text-muted">{note}</div>
+									</div>
+								))}
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -186,80 +302,6 @@ function HomePage() {
 									<span key={i} className={item.color}>{item.label}</span>
 								)
 							)}
-						</div>
-					</div>
-				</div>
-			</div>
-
-			{/* ── Quick start ──────────────────────────────────────── */}
-			<div className="border-b border-border">
-				<div className="max-w-5xl mx-auto px-6 py-14">
-					<SectionTag>QUICK START</SectionTag>
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-						<div>
-							<div className="font-mono text-sm text-text-primary mb-3">1 — Start the stack</div>
-							<CodeBlock>
-								<Prompt>git clone https://github.com/maxmalkin/AgentAuth</Prompt>
-								<Prompt>cd AgentAuth && ./dev.sh</Prompt>
-								<div className="mt-2">
-									<C># registry      http://localhost:8080</C><br />
-									<C># verifier      http://localhost:8081</C><br />
-									<C># approval UI   http://localhost:3001</C><br />
-									<C># mock service  http://localhost:9090</C>
-								</div>
-							</CodeBlock>
-						</div>
-
-						<div>
-							<div className="font-mono text-sm text-text-primary mb-3">2 — Run the MCP agent</div>
-							<CodeBlock>
-								<Prompt>cd services/agentauth-mcp</Prompt>
-								<Prompt>bun run index.ts</Prompt>
-								<div className="mt-2 text-text-secondary">
-									[agentauth-mcp] Registered with registry<br />
-									[agentauth-mcp] Approve this agent at:<br />
-									[agentauth-mcp]   <span className="text-amber">http://localhost:3001/approve/…</span><br />
-									[agentauth-mcp] Waiting for approval…
-								</div>
-							</CodeBlock>
-						</div>
-
-						<div>
-							<div className="font-mono text-sm text-text-primary mb-3">3 — Approve the grant</div>
-							<p className="text-text-secondary text-xs leading-relaxed mb-3">
-								Open the approval URL printed above. Review the capabilities the agent is requesting, then click <strong className="text-text-primary font-mono">APPROVE GRANT</strong>. The agent will start immediately.
-							</p>
-							<Link
-								to="/agents"
-								className="inline-flex items-center gap-2 px-4 py-2 border border-border text-text-secondary font-mono text-xs hover:border-amber hover:text-amber transition-colors"
-							>
-								<svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-									<rect x="2" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
-									<rect x="9" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
-									<rect x="2" y="9" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
-									<rect x="9" y="9" width="5" height="5" stroke="currentColor" strokeWidth="1.5" />
-								</svg>
-								GO TO AGENTS
-							</Link>
-						</div>
-
-						<div>
-							<div className="font-mono text-sm text-text-primary mb-3">4 — Connect Claude Desktop</div>
-							<p className="text-text-secondary text-xs leading-relaxed mb-3">
-								Add to <span className="text-text-primary font-mono">claude_desktop_config.json</span> and restart Claude:
-							</p>
-							<CodeBlock>
-								<span className="text-text-muted">{"{"}</span><br />
-								&nbsp;&nbsp;<span className="text-blue">"mcpServers"</span>: {"{"}<br />
-								&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-blue">"agentauth"</span>: {"{"}<br />
-								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-blue">"command"</span>: <span className="text-green">"bun"</span>,<br />
-								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-blue">"args"</span>: [<span className="text-green">"/path/to/agentauth-mcp/index.ts"</span>],<br />
-								&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-blue">"env"</span>: {"{"} <span className="text-blue">"REGISTRY_URL"</span>: <span className="text-green">"http://localhost:8080"</span> {"}"}<br />
-								&nbsp;&nbsp;&nbsp;&nbsp;{"}"}<br />
-								&nbsp;&nbsp;{"}"}<br />
-								<span className="text-text-muted">{"}"}</span>
-							</CodeBlock>
 						</div>
 					</div>
 				</div>

@@ -3,177 +3,142 @@
 [![CI](https://github.com/maxmalkin/AgentAuth/actions/workflows/ci.yml/badge.svg)](https://github.com/maxmalkin/AgentAuth/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![MSRV](https://img.shields.io/badge/MSRV-1.85-orange.svg)](https://www.rust-lang.org)
-[![Rust](https://img.shields.io/badge/Rust-stable-brightgreen.svg)](https://www.rust-lang.org)
 
-A capability-based authentication system for AI agents.
+Human-in-the-loop authorization for AI agents. Every tool call is cryptographically signed, scoped to what a human approved, and written to an immutable audit log.
 
-AgentAuth enables AI agents to securely authenticate with third-party services while giving humans fine-grained control over what actions agents can perform. It implements a delegated authorization model where humans approve specific capabilities for their agents, and service providers can verify these grants in real-time.
+## Claude Desktop
 
-## Features
+The fastest way to see AgentAuth in action is with the included example MCP server.
 
-- **Capability-based access control** - Define granular permissions (read, write, transact, custom) with resource-level scoping
-- **Human-in-the-loop approvals** - Humans review and approve capability grants via WebAuthn/Passkey signing
-- **Behavioral envelopes** - Rate limits, time windows, and transaction thresholds enforced at the protocol level
-- **DPoP token binding** - Tokens are cryptographically bound to the agent's keypair, preventing theft and replay
-- **Sub-5ms verification** - High-performance token verification via Redis caching
-- **Audit trail** - Immutable, hash-chained audit log of all agent actions
-- **HSM key storage** - Registry signing keys stored in AWS KMS, GCP Cloud KMS, or HashiCorp Vault
+**Prerequisites:** [Bun](https://bun.sh), [Rust](https://rustup.rs), [Docker](https://docs.docker.com/get-docker/)
+
+```bash
+# 1. Clone and start the full stack
+git clone https://github.com/maxmalkin/AgentAuth.git
+cd AgentAuth
+./dev.sh
+```
+
+This starts:
+- Registry on `http://localhost:8080`
+- Verifier on `http://localhost:8081`
+- Approval UI on `http://localhost:3001`
+- Mock service on `http://localhost:9090`
+
+```bash
+# 2. Run the MCP server
+cd services/agentauth-mcp
+bun run index.ts
+```
+
+On first run it prints an approval URL:
+```
+[agentauth-mcp] Registered with registry
+[agentauth-mcp] Approve this agent at:
+[agentauth-mcp]   http://localhost:3001/approve/01966b3c-…
+[agentauth-mcp] Waiting for approval…
+```
+
+Open the URL, review what capabilities the agent is requesting, click **Approve**. The MCP continues:
+```
+[agentauth-mcp] Grant approved!
+[agentauth-mcp] Ready — grant 01966b3c-… is approved
+```
+
+```jsonc
+// 3. Add to claude_desktop_config.json and restart Claude Desktop
+// macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
+// Windows: %APPDATA%\Claude\claude_desktop_config.json
+{
+  "mcpServers": {
+    "agentauth": {
+      "command": "bun",
+      "args": ["run", "/absolute/path/to/AgentAuth/services/agentauth-mcp/index.ts"],
+      "env": {
+        "REGISTRY_URL": "http://localhost:8080",
+        "SERVICE_URL": "http://localhost:9090"
+      }
+    }
+  }
+}
+```
+
+Now ask Claude to use the tools:
+- **"Read my calendar"** → calls `read_calendar` (approved)
+- **"Write a file called test.txt"** → calls `write_file` (approved)
+- **"Send a payment of $100"** → 403 denied — `transact/payments` not in the grant
+
+State is saved at `~/.config/agentauth-mcp/state.json`. Subsequent runs start immediately without re-approval.
+
+---
+
+## What AgentAuth enforces
+
+| Guarantee | Mechanism |
+|---|---|
+| Agents only call what humans approved | Capability grants scoped per resource and action type |
+| Stolen tokens can't be replayed | DPoP sender-constraint — token is bound to the agent's private key |
+| Tokens expire | 15-minute lifetime; refresh requires the original grant to still be valid |
+| Replay attacks blocked | Per-proof nonce checked in Redis before any verification |
+| Rate limits enforced | Behavioral envelope (rpm, burst, time windows) checked at the verifier |
+| Full audit trail | Append-only log with SHA-256 hash chain integrity |
+
+---
 
 ## Architecture
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────────┐
-│   Agent     │────▶│  Registry   │◀────│  Approval UI    │
-│   (SDK)     │     │  Service    │     │  (Human)        │
-└─────────────┘     └─────────────┘     └─────────────────┘
-       │                   │
-       │                   ▼
-       │            ┌─────────────┐
-       │            │  Verifier   │
-       │            │  Service    │
-       │            └─────────────┘
-       │                   ▲
-       ▼                   │
-┌─────────────────────────────────────┐
-│         Service Provider            │
-└─────────────────────────────────────┘
+Claude Desktop ──▶ agentauth-mcp ──▶ AgentAuth Registry :8080
+                                             │
+                        Authorization: AgentBearer <token>
+                        AgentDPoP: <proof>
+                                             │
+                   Your Service ──▶ Verifier :8081 ──▶ allow / deny
 ```
 
-- **Registry Service** - Issues and manages agent access tokens (AATs), handles capability grants
-- **Verifier Service** - Lightweight, horizontally-scalable token verification (read-only)
-- **Approval UI** - React frontend for humans to review and approve capability requests
-- **Agent SDK** - Rust library (with Python bindings) for agents to authenticate
+- **Registry** — issues and manages agent access tokens (AATs), handles capability grants and human approvals
+- **Verifier** — lightweight, read-only, horizontally-scalable token verification (sub-5ms p99 with Redis warm)
+- **Approval UI** — React frontend for humans to review and approve capability requests
+- **agentauth-mcp** — Claude Desktop MCP server that demonstrates the full AgentAuth flow
 
-## Quick Start
+---
 
-### Prerequisites
-
-- Rust 1.85+
-- Bun 1.0+
-- Python 3.11+
-- Docker & Docker Compose
-- cargo-nextest (`cargo install cargo-nextest`)
-
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/maxmalkin/AgentAuth.git
-cd agentauth
-
-# Start dependencies (PostgreSQL, Redis, etc.)
-docker-compose up -d
-
-# Run database migrations
-cargo install sqlx-cli
-sqlx migrate run
-
-# Build all crates
-cargo build --workspace
-
-# Run tests
-cargo nextest run --workspace
-```
-
-### Running Services
-
-The easiest way to run all services locally is with the dev runner script:
-
-```bash
-./dev.sh
-```
-
-This starts the registry, verifier, and approval UI in a single terminal with colored log output.
-
-To run individually:
-
-```bash
-# Start the registry service
-cargo run -p registry-bin
-
-# Start the verifier service (separate terminal)
-cargo run -p verifier-bin
-
-# Start the approval UI (separate terminal)
-cd services/approval-ui
-bun install
-bun run dev
-```
-
-## Repository Structure
+## Repository structure
 
 ```
-agentauth/
+AgentAuth/
+├── services/
+│   ├── agentauth-mcp/       # Claude Desktop MCP server (Bun + TypeScript)
+│   ├── approval-ui/         # React approval frontend
+│   ├── registry/            # Registry binary (Rust)
+│   └── verifier/            # Verifier binary (Rust)
 ├── crates/
 │   ├── core/                # Protocol types, crypto (no I/O)
 │   ├── registry/            # Registry service logic
-│   ├── sdk/                 # Rust agent SDK
-│   ├── py/                  # Python bindings (PyO3)
-│   └── schema/              # JSON Schema validation
-├── services/
-│   ├── registry/            # Registry binary
-│   ├── verifier/            # Verifier binary
-│   ├── audit-archiver/      # Audit log archival
-│   └── approval-ui/         # React approval frontend
-├── migrations/              # SQLx database migrations
-├── load-tests/              # k6 load test scripts
-├── chaos/                   # Chaos engineering experiments
-├── deploy/
-    ├── helm/                # Kubernetes Helm charts
-    └── grafana/             # Grafana dashboards
+│   └── sdk/                 # Rust agent SDK
+├── migrations/              # Database migrations
+├── tests/integration/       # End-to-end tests
+└── dev.sh                   # Start all services locally
 ```
 
-## SDK Usage
+---
 
-### Rust
+## Integrating AgentAuth into your own agent
 
-```rust
-use agentauth::{AgentAuthClient, AgentAuthConfig, Capability};
+AgentAuth is designed to be embedded in any AI agent, not just Claude Desktop. The MCP server in `services/agentauth-mcp/` is a complete, working reference implementation you can adapt.
 
-let config = AgentAuthConfig::new("https://registry.example.com")?;
-let client = AgentAuthClient::new(config)?;
+The core pattern:
 
-// Request capabilities
-let grant = client.request_grant(
-    "service-provider-id",
-    vec![Capability::Read {
-        resource: "calendar".to_string(),
-        filter: None
-    }],
-).await?;
+1. Generate an Ed25519 keypair on first run
+2. POST your signed manifest to `/v1/agents/register`
+3. POST to `/v1/grants/request` and block until a human approves
+4. On each tool call, POST to `/v1/tokens/issue` to get a short-lived token
+5. Send `Authorization: AgentBearer <token>` and `AgentDPoP: <proof>` on every request to your service
+6. Your service calls `/v1/tokens/verify` to check the token and capability
 
-// After human approval, get a token
-let token = client.get_token("service-provider-id").await?;
+See [`services/agentauth-mcp/README.md`](services/agentauth-mcp/README.md) for the full implementation details.
 
-// Authenticate requests
-client.authenticate_request("service-provider-id", &mut request).await?;
-```
-
-### Python
-
-```python
-from agentauth import AgentAuthClient, Capability
-
-client = AgentAuthClient("https://registry.example.com")
-
-# Request capabilities
-grant = await client.request_grant(
-    service_provider_id="service-provider-id",
-    capabilities=[Capability.read("calendar")]
-)
-
-# After human approval, authenticate requests
-headers = await client.authenticate_headers("service-provider-id", "POST", "/api/events")
-```
-
-## Security
-
-- All signing keys stored in HSMs (AWS KMS, GCP Cloud KMS, Vault Transit)
-- DPoP sender-constraint prevents token theft
-- Nonce-based replay prevention
-- Constant-time cryptographic comparisons
-- Immutable audit log with hash chain integrity
-- WebAuthn/Passkey for human approval signing
+---
 
 ## License
 
