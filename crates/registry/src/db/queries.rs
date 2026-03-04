@@ -347,12 +347,14 @@ pub async fn approve_grant(
     approved_by: Uuid,
     approval_nonce: &[u8],
     approval_signature: &[u8],
+    granted_capabilities: &[Capability],
 ) -> Result<bool> {
     let result = sqlx::query(
         r#"
         UPDATE capability_grants
         SET status = 'approved', approved_by = $2, approval_nonce = $3,
-            approval_signature = $4, decided_at = NOW(), updated_at = NOW()
+            approval_signature = $4, granted_capabilities = $5,
+            decided_at = NOW(), updated_at = NOW()
         WHERE id = $1 AND status = 'pending'
         "#,
     )
@@ -360,6 +362,7 @@ pub async fn approve_grant(
     .bind(approved_by)
     .bind(approval_nonce)
     .bind(approval_signature)
+    .bind(sqlx::types::Json(granted_capabilities))
     .execute(pool)
     .await?;
 
