@@ -48,44 +48,48 @@ body::after {
 	}
 }
 
-/* Pending badge — light travelling around the border */
+/* Pending badge — single light running around the border */
+@property --border-angle {
+	syntax: "<angle>";
+	inherits: false;
+	initial-value: 0turn;
+}
+
 @keyframes border-spin {
 	to {
-		transform: rotate(360deg);
+		--border-angle: 1turn;
 	}
 }
 
 .pending-badge {
 	position: relative;
-	overflow: hidden;
-	background: rgba(245, 158, 11, 0.12);
+	border: 1px solid rgba(245, 158, 11, 0.25);
+	background: rgba(245, 158, 11, 0.08);
 }
 
-/* Rotating conic gradient — creates the travelling-light border effect */
+/* Narrow light that follows the border path */
 .pending-badge::before {
 	content: "";
 	position: absolute;
-	/* Must be larger than the element so corners stay covered */
-	inset: -200%;
-	width: 500%;
-	height: 500%;
+	inset: -1px;
+	padding: 1px;
+	border-radius: inherit;
 	background: conic-gradient(
-		from 0deg,
-		transparent 0deg,
-		transparent 310deg,
-		rgba(245, 158, 11, 0.2) 330deg,
-		#f59e0b 348deg,
-		rgba(245, 158, 11, 0.2) 360deg
+		from var(--border-angle),
+		transparent 0%,
+		transparent 88%,
+		rgba(245, 158, 11, 0.35) 92%,
+		#f59e0b 94%,
+		rgba(245, 158, 11, 0.35) 96%,
+		transparent 100%
 	);
+	-webkit-mask:
+		linear-gradient(#fff 0 0) content-box,
+		linear-gradient(#fff 0 0);
+	-webkit-mask-composite: xor;
+	mask-composite: exclude;
 	animation: border-spin 2.5s linear infinite;
-}
-
-/* Masks the interior, leaving only a ~1px amber border visible */
-.pending-badge::after {
-	content: "";
-	position: absolute;
-	inset: 1px;
-	background: rgba(245, 158, 11, 0.1);
+	pointer-events: none;
 }
 
 @keyframes fade-in {
