@@ -2,9 +2,7 @@
 
 use std::sync::Arc;
 
-use arrow::array::{
-    BinaryBuilder, RecordBatch, StringBuilder, TimestampMicrosecondBuilder,
-};
+use arrow::array::{BinaryBuilder, RecordBatch, StringBuilder, TimestampMicrosecondBuilder};
 use arrow::datatypes::{DataType, Field, Schema, TimeUnit};
 use bytes::Bytes;
 use parquet::arrow::ArrowWriter;
@@ -170,7 +168,9 @@ mod tests {
     #[test]
     fn test_schema_agent_id_is_nullable() {
         let schema = audit_events_schema();
-        let field = schema.field_with_name("agent_id").expect("test: field exists");
+        let field = schema
+            .field_with_name("agent_id")
+            .expect("test: field exists");
         assert!(field.is_nullable());
     }
 
@@ -211,7 +211,10 @@ mod tests {
         )
         .expect("test: parquet reader");
 
-        let batches: Vec<_> = reader.into_iter().collect::<std::result::Result<Vec<_>, _>>().expect("test: read batches");
+        let batches: Vec<_> = reader
+            .into_iter()
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .expect("test: read batches");
         assert_eq!(batches.len(), 1);
         assert_eq!(batches[0].num_rows(), 1);
     }

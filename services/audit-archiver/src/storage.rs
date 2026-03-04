@@ -47,18 +47,16 @@ pub trait ColdStorage: Send + Sync {
 pub async fn create_storage(config: &StorageConfig) -> Result<Box<dyn ColdStorage>> {
     match config.backend {
         StorageBackend::S3 => {
-            let bucket = config
-                .s3_bucket
-                .as_deref()
-                .ok_or_else(|| ArchiverError::Config("s3_bucket is required when backend=s3".into()))?;
+            let bucket = config.s3_bucket.as_deref().ok_or_else(|| {
+                ArchiverError::Config("s3_bucket is required when backend=s3".into())
+            })?;
             let storage = S3Storage::new(config, bucket).await?;
             Ok(Box::new(storage))
         }
         StorageBackend::LocalFs => {
-            let path = config
-                .local_path
-                .as_deref()
-                .ok_or_else(|| ArchiverError::Config("local_path is required when backend=local_fs".into()))?;
+            let path = config.local_path.as_deref().ok_or_else(|| {
+                ArchiverError::Config("local_path is required when backend=local_fs".into())
+            })?;
             let storage = LocalFsStorage::new(path)?;
             Ok(Box::new(storage))
         }
@@ -91,9 +89,8 @@ impl S3Storage {
     ///
     /// Returns an error if the AWS SDK configuration fails.
     async fn new(config: &StorageConfig, bucket: &str) -> Result<Self> {
-        let mut aws_config_builder = aws_config::from_env().region(
-            aws_config::Region::new(config.s3_region.clone()),
-        );
+        let mut aws_config_builder =
+            aws_config::from_env().region(aws_config::Region::new(config.s3_region.clone()));
 
         // Override endpoint for MinIO or other S3-compatible services
         if let Some(ref endpoint) = config.s3_endpoint_url {
@@ -157,7 +154,9 @@ impl ColdStorage for S3Storage {
                 if is_not_found {
                     Ok(false)
                 } else {
-                    Err(ArchiverError::Storage(format!("S3 head_object failed: {err}")))
+                    Err(ArchiverError::Storage(format!(
+                        "S3 head_object failed: {err}"
+                    )))
                 }
             }
         }
@@ -181,8 +180,9 @@ impl LocalFsStorage {
     /// Returns an error if the directory cannot be created.
     fn new(path: &str) -> Result<Self> {
         let base_path = PathBuf::from(path);
-        std::fs::create_dir_all(&base_path)
-            .map_err(|e| ArchiverError::Storage(format!("failed to create directory {path}: {e}")))?;
+        std::fs::create_dir_all(&base_path).map_err(|e| {
+            ArchiverError::Storage(format!("failed to create directory {path}: {e}"))
+        })?;
         Ok(Self { base_path })
     }
 }

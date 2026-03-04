@@ -2,109 +2,151 @@
 
 /* Base */
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
 }
 
 body {
-  background: #0a0a0f;
-  color: #e8e8f0;
-  font-family: 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
+	background: #0a0a0f;
+	color: #e8e8f0;
+	font-family:
+		"DM Sans",
+		"Inter",
+		system-ui,
+		-apple-system,
+		sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	line-height: 1.5;
 }
 
 /* Scanline overlay */
 body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.03) 2px,
-    rgba(0, 0, 0, 0.03) 4px
-  );
+	content: "";
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: 9999;
+	background: repeating-linear-gradient(
+		0deg,
+		transparent,
+		transparent 2px,
+		rgba(0, 0, 0, 0.03) 2px,
+		rgba(0, 0, 0, 0.03) 4px
+	);
 }
 
 /* Animations */
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
+	0%,
+	100% {
+		opacity: 0.4;
+	}
+	50% {
+		opacity: 1;
+	}
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 @keyframes slide-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 .animate-fade-in {
-  animation: fade-in 0.3s ease-out both;
+	animation: fade-in 0.3s ease-out both;
 }
 
 .animate-slide-up {
-  animation: slide-up 0.4s ease-out both;
+	animation: slide-up 0.4s ease-out both;
 }
 
 /* Stagger children animation */
 .stagger-children > * {
-  animation: fade-in 0.3s ease-out both;
+	animation: fade-in 0.3s ease-out both;
 }
-.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
-.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+.stagger-children > *:nth-child(1) {
+	animation-delay: 0ms;
+}
+.stagger-children > *:nth-child(2) {
+	animation-delay: 50ms;
+}
+.stagger-children > *:nth-child(3) {
+	animation-delay: 100ms;
+}
+.stagger-children > *:nth-child(4) {
+	animation-delay: 150ms;
+}
+.stagger-children > *:nth-child(5) {
+	animation-delay: 200ms;
+}
+.stagger-children > *:nth-child(6) {
+	animation-delay: 250ms;
+}
+.stagger-children > *:nth-child(7) {
+	animation-delay: 300ms;
+}
+.stagger-children > *:nth-child(8) {
+	animation-delay: 350ms;
+}
 
 /* Skeleton loading */
 @keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+	0% {
+		background-position: -400px 0;
+	}
+	100% {
+		background-position: 400px 0;
+	}
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #111118 25%, #1a1a24 50%, #111118 75%);
-  background-size: 800px 100%;
-  animation: shimmer 1.5s infinite linear;
-  border-radius: 2px;
+	background: linear-gradient(90deg, #111118 25%, #1a1a24 50%, #111118 75%);
+	background-size: 800px 100%;
+	animation: shimmer 1.5s infinite linear;
+	border-radius: 2px;
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+	width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0f;
+	background: #0a0a0f;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a2a3a;
-  border-radius: 3px;
+	background: #2a2a3a;
+	border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a4e;
+	background: #3a3a4e;
 }
 
 /* Focus ring */
 :focus-visible {
-  outline: 1px solid #f59e0b;
-  outline-offset: 2px;
+	outline: 1px solid #f59e0b;
+	outline-offset: 2px;
 }
 
 /* Selection */
 ::selection {
-  background: rgba(245, 158, 11, 0.3);
-  color: #e8e8f0;
+	background: rgba(245, 158, 11, 0.3);
+	color: #e8e8f0;
 }

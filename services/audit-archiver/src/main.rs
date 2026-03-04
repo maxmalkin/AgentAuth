@@ -203,8 +203,7 @@ async fn archive_expired(
         }
 
         let key = storage::storage_key(&config.storage.s3_prefix, &partition_info.name);
-        archive_single_partition(pool, &*cold_storage, &schema, partition_info, &key, result)
-            .await;
+        archive_single_partition(pool, &*cold_storage, &schema, partition_info, &key, result).await;
     }
 
     Ok(())
@@ -257,7 +256,9 @@ async fn archive_single_partition(
         .iter()
         .filter_map(|rows| {
             parquet::rows_to_record_batch(rows, schema)
-                .map_err(|e| error!(partition = %partition_info.name, error = %e, "record batch error"))
+                .map_err(
+                    |e| error!(partition = %partition_info.name, error = %e, "record batch error"),
+                )
                 .ok()
         })
         .collect();
@@ -329,8 +330,8 @@ fn init_tracing(log_level: &str) {
 
 /// Waits for a shutdown signal (Ctrl+C or SIGTERM).
 #[allow(clippy::expect_used)] // Signal handler setup is infallible in practice;
-                               // panicking here is appropriate since the process
-                               // cannot function without signal handling.
+                              // panicking here is appropriate since the process
+                              // cannot function without signal handling.
 async fn shutdown_signal() {
     let ctrl_c = async {
         tokio::signal::ctrl_c()
