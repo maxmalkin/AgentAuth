@@ -1,5 +1,6 @@
 {
   "name": "agentauth-mcp",
+  "version": "1.3.0",
   "module": "index.ts",
   "type": "module",
   "private": true,
