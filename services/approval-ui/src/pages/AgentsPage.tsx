@@ -186,8 +186,8 @@ function AgentRow({ agent }: { agent: AgentSummary }) {
 							{status.label}
 						</span>
 						{agent.pending_grant_id && (
-							<span className="font-mono text-[10px] tracking-wide text-amber border border-amber-dim px-1.5 py-0.5 bg-amber-glow animate-pulse">
-								PENDING APPROVAL
+							<span className="pending-badge font-mono text-[10px] tracking-wide text-amber px-1.5 py-0.5">
+								<span className="relative z-10">PENDING APPROVAL</span>
 							</span>
 						)}
 					</div>
