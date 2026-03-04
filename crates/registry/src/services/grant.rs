@@ -101,6 +101,7 @@ impl GrantService {
         approved_by: Uuid,
         approval_nonce: &[u8],
         approval_signature: &[u8],
+        granted_capabilities: Option<Vec<Capability>>,
     ) -> Result<CapabilityGrant> {
         // Get the grant first
         let grant = self
@@ -118,6 +119,31 @@ impl GrantService {
             return Err(RegistryError::GrantExpired);
         }
 
+        // Resolve the capability subset to persist
+        let resolved_capabilities = if let Some(caps) = granted_capabilities {
+            if caps.is_empty() {
+                return Err(RegistryError::InvalidCapability(
+                    "must grant at least one capability".to_string(),
+                ));
+            }
+            // Verify every requested cap appears in the original request
+            for cap in &caps {
+                let cap_type = capability_type_key(cap);
+                let in_original = grant
+                    .requested_capabilities
+                    .iter()
+                    .any(|r| capability_type_key(r) == cap_type);
+                if !in_original {
+                    return Err(RegistryError::InvalidCapability(format!(
+                        "cannot grant capability not in original request: {cap_type}"
+                    )));
+                }
+            }
+            caps
+        } else {
+            grant.requested_capabilities.clone()
+        };
+
         // Approve in database
         let approved = db::approve_grant(
             self.db.primary(),
@@ -125,6 +151,7 @@ impl GrantService {
             approved_by,
             approval_nonce,
             approval_signature,
+            &resolved_capabilities,
         )
         .await?;
 
@@ -132,11 +159,11 @@ impl GrantService {
             return Err(RegistryError::GrantNotPending);
         }
 
-        // Return updated grant
-        // Note: approval_assertion would need full WebAuthn data to populate
+        // Return updated grant with the approved capability subset
         let updated = CapabilityGrant {
             status: GrantStatus::Approved,
             approved_at: Some(Utc::now()),
+            requested_capabilities: resolved_capabilities,
             ..grant
         };
 
@@ -223,5 +250,17 @@ impl GrantService {
             approved_at: row.decided_at,
             approval_assertion: None, // Would need to reconstruct from nonce/signature if needed
         })
+    }
+}
+
+/// Return a stable string key representing the type and resource of a capability,
+/// used to check whether a requested capability is a subset of the original request.
+fn capability_type_key(cap: &Capability) -> String {
+    match cap {
+        Capability::Read { resource, .. } => format!("read:{resource}"),
+        Capability::Write { resource, .. } => format!("write:{resource}"),
+        Capability::Delete { resource, .. } => format!("delete:{resource}"),
+        Capability::Transact { resource, .. } => format!("transact:{resource}"),
+        Capability::Custom { namespace, name, .. } => format!("custom:{namespace}:{name}"),
     }
 }

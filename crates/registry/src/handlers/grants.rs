@@ -81,6 +81,9 @@ pub struct ApproveGrantRequest {
     /// Approval signature (WebAuthn signature).
     #[serde(with = "hex_serde")]
     pub approval_signature: Vec<u8>,
+    /// Optional subset of capabilities to grant. If omitted, all requested capabilities are granted.
+    #[serde(default)]
+    pub granted_capabilities: Option<Vec<Capability>>,
 }
 
 /// Request a new grant.
@@ -159,6 +162,7 @@ pub async fn approve_grant(
             req.approved_by,
             &req.approval_nonce,
             &req.approval_signature,
+            req.granted_capabilities,
         )
         .await?;
 

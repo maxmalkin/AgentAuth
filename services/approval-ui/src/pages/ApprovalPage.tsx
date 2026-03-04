@@ -24,6 +24,12 @@ export function ApprovalPage() {
 	const { navigate } = useRouter();
 	const [state, setState] = useState<PageState>({ type: "loading" });
 	const [denyReason, setDenyReason] = useState("");
+	const [enabledIndices, setEnabledIndices] = useState<Set<number>>(
+		new Set(),
+	);
+	const [pendingRemoveIndex, setPendingRemoveIndex] = useState<number | null>(
+		null,
+	);
 
 	useEffect(() => {
 		loadGrant();
@@ -55,6 +61,11 @@ export function ApprovalPage() {
 				});
 				return;
 			}
+			// Initialize all capabilities as enabled
+			setEnabledIndices(
+				new Set(grant.requested_capabilities.map((_, i) => i)),
+			);
+			setPendingRemoveIndex(null);
 			setState({ type: "loaded", grant });
 		} catch (err) {
 			setState({
@@ -68,8 +79,38 @@ export function ApprovalPage() {
 		}
 	}
 
+	function handleRemove(grant: GrantRequest, index: number) {
+		const cap = grant.requested_capabilities[index];
+		if (cap === undefined) return;
+		if (requiresTwoStep(cap)) {
+			setPendingRemoveIndex(index);
+		} else {
+			setEnabledIndices((prev) => {
+				const next = new Set(prev);
+				next.delete(index);
+				return next;
+			});
+		}
+	}
+
+	function handleConfirmRemove(index: number) {
+		setEnabledIndices((prev) => {
+			const next = new Set(prev);
+			next.delete(index);
+			return next;
+		});
+		setPendingRemoveIndex(null);
+	}
+
+	function handleRestore(index: number) {
+		setEnabledIndices((prev) => new Set([...prev, index]));
+	}
+
 	function handleApproveClick(grant: GrantRequest) {
-		const summary = getCapabilitySummary(grant.requested_capabilities);
+		const granted = grant.requested_capabilities.filter((_, i) =>
+			enabledIndices.has(i),
+		);
+		const summary = getCapabilitySummary(granted);
 		if (summary.hasHighRisk) {
 			setState({ type: "confirming", grant, step: 1 });
 		} else {
@@ -98,11 +139,16 @@ export function ApprovalPage() {
 				b.toString(16).padStart(2, "0"),
 			).join("");
 
+			const grantedCapabilities = grant.requested_capabilities.filter(
+				(_, i) => enabledIndices.has(i),
+			);
+
 			await approveGrant(
 				grant.grant_id,
 				grant.human_principal_id,
 				nonce,
 				signature,
+				grantedCapabilities,
 			);
 			setState({ type: "success", action: "approved" });
 		} catch (err) {
@@ -285,7 +331,11 @@ export function ApprovalPage() {
 	const grant = state.grant;
 	const isConfirming = state.type === "confirming";
 	const confirmStep = isConfirming ? state.step : 0;
-	const summary = getCapabilitySummary(grant.requested_capabilities);
+	const grantedCapabilities = grant.requested_capabilities.filter((_, i) =>
+		enabledIndices.has(i),
+	);
+	const summary = getCapabilitySummary(grantedCapabilities);
+	const allRemoved = grantedCapabilities.length === 0;
 
 	return (
 		<Shell>
@@ -327,9 +377,27 @@ export function ApprovalPage() {
 					</SectionLabel>
 					<div className="border border-border divide-y divide-border stagger-children">
 						{grant.requested_capabilities.map((cap, idx) => (
-							<CapabilityRow key={idx} capability={cap} />
+							<CapabilityRow
+								key={idx}
+								capability={cap}
+								enabled={enabledIndices.has(idx)}
+								isPendingRemove={pendingRemoveIndex === idx}
+								onRemove={() => handleRemove(grant, idx)}
+								onRestore={() => handleRestore(idx)}
+								onConfirmRemove={() =>
+									handleConfirmRemove(idx)
+								}
+								onCancelRemove={() =>
+									setPendingRemoveIndex(null)
+								}
+							/>
 						))}
 					</div>
+					{allRemoved && (
+						<p className="mt-2 text-xs font-mono text-text-muted text-right">
+							All permissions removed — use Deny instead
+						</p>
+					)}
 				</div>
 
 				{/* Behavioral constraints */}
@@ -385,7 +453,12 @@ export function ApprovalPage() {
 						</div>
 						<button
 							onClick={() => handleApproveClick(grant)}
-							className="px-6 py-3 bg-amber text-surface font-mono text-sm font-medium tracking-wide hover:bg-amber-dim transition-colors"
+							disabled={allRemoved}
+							className={`px-6 py-3 font-mono text-sm font-medium tracking-wide transition-colors ${
+								allRemoved
+									? "bg-panel border border-border text-text-muted cursor-not-allowed"
+									: "bg-amber text-surface hover:bg-amber-dim"
+							}`}
 						>
 							APPROVE
 						</button>
@@ -444,7 +517,7 @@ export function ApprovalPage() {
 									You are granting access to:
 								</p>
 								<div className="border border-red-dim bg-red-glow divide-y divide-red-dim/50 mb-4">
-									{grant.requested_capabilities
+									{grantedCapabilities
 										.filter(requiresTwoStep)
 										.map((cap, idx) => (
 											<div
@@ -550,7 +623,23 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 	);
 }
 
-function CapabilityRow({ capability }: { capability: Capability }) {
+function CapabilityRow({
+	capability,
+	enabled,
+	isPendingRemove,
+	onRemove,
+	onRestore,
+	onConfirmRemove,
+	onCancelRemove,
+}: {
+	capability: Capability;
+	enabled: boolean;
+	isPendingRemove: boolean;
+	onRemove: () => void;
+	onRestore: () => void;
+	onConfirmRemove: () => void;
+	onCancelRemove: () => void;
+}) {
 	const risk = getCapabilityRiskLevel(capability);
 	const needsTwoStep = requiresTwoStep(capability);
 
@@ -559,6 +648,66 @@ function CapabilityRow({ capability }: { capability: Capability }) {
 		medium: "bg-amber",
 		high: "bg-red",
 	};
+
+	if (!enabled) {
+		return (
+			<div className="flex items-center gap-3 px-4 py-3 bg-panel opacity-50">
+				<div className={`w-1.5 h-1.5 ${riskColors[risk]} shrink-0`} />
+				<span className="text-sm text-text-secondary flex-1 line-through">
+					{capabilityToHumanReadable(capability)}
+				</span>
+				<span className="font-mono text-[10px] tracking-wide text-red border border-red/30 px-2 py-0.5">
+					REMOVED
+				</span>
+				<button
+					onClick={onRestore}
+					className="font-mono text-[10px] tracking-wide text-text-muted border border-border px-2 py-0.5 hover:border-text-secondary hover:text-text-secondary transition-colors"
+				>
+					RESTORE
+				</button>
+			</div>
+		);
+	}
+
+	if (isPendingRemove) {
+		return (
+			<div className="bg-panel border-l-2 border-red">
+				<div className="flex items-center gap-3 px-4 py-3">
+					<div
+						className={`w-1.5 h-1.5 ${riskColors[risk]} shrink-0`}
+					/>
+					<span className="text-sm text-text-primary flex-1">
+						{capabilityToHumanReadable(capability)}
+					</span>
+					{needsTwoStep && (
+						<span className="font-mono text-[10px] tracking-wide text-red border border-red-dim px-2 py-0.5 bg-red-glow">
+							2-STEP
+						</span>
+					)}
+				</div>
+				<div className="px-4 pb-3 flex items-center justify-between gap-3">
+					<p className="text-xs text-text-secondary">
+						Remove this permission? The agent will be denied this
+						capability.
+					</p>
+					<div className="flex gap-2 shrink-0">
+						<button
+							onClick={onCancelRemove}
+							className="font-mono text-[10px] tracking-wide text-text-muted border border-border px-2 py-1 hover:border-text-secondary hover:text-text-secondary transition-colors"
+						>
+							CANCEL
+						</button>
+						<button
+							onClick={onConfirmRemove}
+							className="font-mono text-[10px] tracking-wide text-red border border-red-dim px-2 py-1 hover:bg-red-glow transition-colors"
+						>
+							CONFIRM REMOVE
+						</button>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex items-center gap-3 px-4 py-3 bg-panel hover:bg-panel-hover transition-colors">
@@ -571,6 +720,12 @@ function CapabilityRow({ capability }: { capability: Capability }) {
 					2-STEP
 				</span>
 			)}
+			<button
+				onClick={onRemove}
+				className="font-mono text-[10px] tracking-wide text-text-muted border border-border px-2 py-0.5 hover:border-red hover:text-red transition-colors"
+			>
+				REMOVE
+			</button>
 		</div>
 	);
 }

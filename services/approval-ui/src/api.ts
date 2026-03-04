@@ -7,6 +7,7 @@ import type {
 	AuditEvent,
 	ApprovalAssertion,
 	ApiError,
+	Capability,
 } from "./types";
 
 const REGISTRY_URL = "http://localhost:8080";
@@ -114,6 +115,7 @@ export async function approveGrant(
 	approvedBy: string,
 	approvalNonce: string,
 	approvalSignature: string,
+	grantedCapabilities: Capability[],
 ): Promise<void> {
 	await request(`/v1/grants/${grantId}/approve`, {
 		method: "POST",
@@ -121,6 +123,7 @@ export async function approveGrant(
 			approved_by: approvedBy,
 			approval_nonce: approvalNonce,
 			approval_signature: approvalSignature,
+			granted_capabilities: grantedCapabilities,
 		}),
 	});
 }
